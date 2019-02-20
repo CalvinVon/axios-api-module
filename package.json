@@ -3,6 +3,7 @@
     "version": "0.1.0",
     "description": "Encapsulated api module based on axios",
     "main": "lib/index.js",
+    "typings": "./index.d.ts",
     "scripts": {
         "build:lib": "babel src --out-dir lib",
         "build:dist": "webpack --config webpack.config.js"
