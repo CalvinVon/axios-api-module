@@ -4,9 +4,9 @@ export type ForeRequestHook = (
   next: (error?: Error) => null
 ) => void;
 
-export type ForeRequestHook = (
+export type FallbackHook = (
   apiMeta: ApiMeta,
-  data: Object | {},
+  error: Error,
   next: (error?: Error) => null
 ) => void;
 
@@ -32,7 +32,7 @@ interface TransformedApiData {
 
 type TransformedApi = (data?: TransformedApiData) => Promise<any>;
 
-export interface TransformedApiSet {
+export interface TransformedApiMap {
   [apiMetaName: string]: TransformedApi;
 }
 
@@ -40,9 +40,9 @@ declare class ApiModule {
   constructor(config: ApiModuleConfig);
 
   registeForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
-  registeFallbackMiddleWare(fallbackHook: ForeRequestHook): void;
+  registeFallbackMiddleWare(fallbackHook: FallbackHook): void;
 
-  getInstance(): TransformedApiSet;
+  getInstance(): TransformedApiMap;
   getAxios(): any;
 }
 
