@@ -1,2 +1,4 @@
 /src/
 /node_modules/
+webpack.config.js
+babel.config.js

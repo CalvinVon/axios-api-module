@@ -1,16 +1,17 @@
 import axios from 'axios';
 
 /**
- * api 统一封装方法
- * @description api集合为元数据，可直接在页面使用 this.$api[module][api]某某方法
- * @example api.login.logout(queryOrBodyData, enableFilterEmpty)
- *
- * @param {Object} queryOrBodyData? 查询参数 或者 荷载数据
- * @param {Boolean} enableFilterEmpty? 是否开启过滤空字段，默认 false
- *
- * @return {Object<{ data }>}
+ * Api Module class
+ * 
+ * @member {Object} options
+ * @member {Function} foreRequestHook
+ * @member {Function} fallbackHook
+ * 
+ * @method registeForeRequestMiddleWare(hook)
+ * @method registeFallbackMiddleWare(hook)
+ * @method getAxios()
+ * @method getInstance(hook)
  */
-
 export default class ApiModule {
 
     options = {};
@@ -48,6 +49,13 @@ export default class ApiModule {
      */
     registeFallbackMiddleWare(fallbackHook = new Function()) {
         this.fallbackHook = fallbackHook;
+    }
+
+    /**
+     * @returns {Axios} get instance of Axios
+     */
+    getAxios() {
+        return this.options.axios;
     }
 
     /**
@@ -90,7 +98,7 @@ export default class ApiModule {
         const target_ = {};
         for (const key in target) {
             if (target.hasOwnProperty(key)) {
-                target_[key] = _ProxyApi(target, key);
+                target_[key] = this._ProxyApi(target, key);
             }
         }
         return target_;

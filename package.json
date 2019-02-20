@@ -1,27 +1,40 @@
 {
-  "name": "@calvin_von/axios-api-module",
-  "version": "0.1.0",
-  "description": "Encapsulated api module based on axios",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/CalvinVon/axios-api-module.git"
-  },
-  "keywords": [
-    "axios",
-    "api",
-    "module"
-  ],
-  "author": "calvin_von",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/CalvinVon/axios-api-module/issues"
-  },
-  "homepage": "https://github.com/CalvinVon/axios-api-module#readme",
-  "dependencies": {
-    "axios": "^0.18.0"
-  }
+    "name": "@calvin_von/axios-api-module",
+    "version": "0.1.0",
+    "description": "Encapsulated api module based on axios",
+    "main": "lib/index.js",
+    "scripts": {
+        "build:lib": "babel src --out-dir lib",
+        "build:dist": "webpack --config webpack.config.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/CalvinVon/axios-api-module.git"
+    },
+    "keywords": [
+        "axios",
+        "api",
+        "module"
+    ],
+    "author": "calvin_von",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/CalvinVon/axios-api-module/issues"
+    },
+    "homepage": "https://github.com/CalvinVon/axios-api-module#readme",
+    "dependencies": {
+        "axios": "^0.18.0"
+    },
+    "devDependencies": {
+        "@babel/cli": "^7.2.3",
+        "@babel/core": "^7.3.3",
+        "@babel/plugin-proposal-class-properties": "^7.3.3",
+        "@babel/plugin-transform-runtime": "^7.2.0",
+        "@babel/preset-env": "^7.3.1",
+        "@babel/runtime": "^7.3.1",
+        "babel-loader": "^8.0.5",
+        "uglifyjs-webpack-plugin": "^2.1.1",
+        "webpack": "^4.29.5",
+        "webpack-cli": "^3.2.3"
+    }
 }
