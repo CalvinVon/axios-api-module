@@ -1,5 +1,6 @@
 // import ApiModule from "../es";
-const ApiModule = require("../lib").default;
+const ApiModule = require("../lib");
+// const ApiModule = require("../dist/axios-api-module.min.js");
 
 const apiModuleA = new ApiModule({
     apiMetas: {

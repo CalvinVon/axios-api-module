@@ -1,14 +1,14 @@
 {
     "name": "@calvin_von/axios-api-module",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Encapsulated api module based on axios",
     "main": "lib/index.js",
     "module": "es/index.js",
     "typings": "./index.d.ts",
     "scripts": {
-        "build:es": "set BABEL_ENV=es&&babel src --out-dir es",
-        "build:lib": "set BABEL_ENV=umd&&babel src --out-dir lib",
-        "build:dist": "set BABEL_ENV=umd&&webpack --config webpack.config.js"
+        "build:es": "cross-env BABEL_ENV=es babel src --out-dir es",
+        "build:lib": "cross-env BABEL_ENV=umd babel src --out-dir lib",
+        "build:dist": "cross-env BABEL_ENV=umd webpack --config webpack.config.js"
     },
     "repository": {
         "type": "git",
@@ -36,6 +36,8 @@
         "@babel/plugin-transform-runtime": "^7.2.0",
         "@babel/preset-env": "^7.3.1",
         "babel-loader": "^8.0.5",
+        "babel-plugin-add-module-exports": "^1.0.0",
+        "cross-env": "^5.2.0",
         "uglifyjs-webpack-plugin": "^2.1.1",
         "webpack": "^4.29.5",
         "webpack-cli": "^3.2.3"
