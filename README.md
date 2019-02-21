@@ -2,8 +2,7 @@
 Encapsulated api module based on axios.
 
 [![version](https://img.shields.io/npm/v/@calvin_von/axios-api-module.svg)](https://github.com/CalvinVon/axios-api-module)
-[![npm bundle size minified](https://img.shields.io/bundlephobia/min/@calvin_von/axios-api-module.svg)](https://github.com/CalvinVon/axios-api-module/blob/master/dist/axios-api-module.min.js)
-[![npm bundle size gzip](https://img.shields.io/bundlephobia/minzip/@calvin_von/axios-api-module.svg)](https://github.com/CalvinVon/axios-api-module/blob/master/dist/axios-api-module.min.js)
+[![](https://img.shields.io/github/size/CalvinVon/axios-api-module/dist/axios-api-module.min.js.svg?label=minified%20size)](https://github.com/CalvinVon/axios-api-module/blob/master/dist/axios-api-module.min.js)
 [![](https://data.jsdelivr.com/v1/package/npm/@calvin_von/axios-api-module/badge)](https://www.jsdelivr.com/package/npm/@calvin_von/axios-api-module)
 ![dependencies](https://img.shields.io/david/CalvinVon/axios-api-module.svg)
 
@@ -24,7 +23,7 @@ or via CDN
 <script src="https://cdn.jsdelivr.net/npm/axios@0.18.0/dist/axios.min.js"></script>
 
 <!-- then import apiModule -->
-<script src="https://cdn.jsdelivr.net/npm/@calvin_von/axios-api-module@1.0.0/dist/axios-api-module.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@calvin_von/axios-api-module/dist/axios-api-module.min.js"></script>
 
 ```
 ### Typical Usage
@@ -163,4 +162,6 @@ Whether enable moduled namespace
 - `registerFallbackMiddleWare(fallbackHook: (apiMeta, error, next) => null)`
 
   Same as static method.But **only affect single instance**.
-  
+
+# LICENSE
+[MIT LICENSE](./LICENSE)
