@@ -3,10 +3,12 @@
     "version": "1.0.0",
     "description": "Encapsulated api module based on axios",
     "main": "lib/index.js",
+    "module": "es/index.js",
     "typings": "./index.d.ts",
     "scripts": {
-        "build:lib": "babel src --out-dir lib",
-        "build:dist": "webpack --config webpack.config.js"
+        "build:es": "set BABEL_ENV=es&&babel src --out-dir es",
+        "build:lib": "set BABEL_ENV=umd&&babel src --out-dir lib",
+        "build:dist": "set BABEL_ENV=umd&&webpack --config webpack.config.js"
     },
     "repository": {
         "type": "git",

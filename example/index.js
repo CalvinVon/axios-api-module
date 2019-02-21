@@ -1,3 +1,4 @@
+// import ApiModule from "../es";
 const ApiModule = require("../lib").default;
 
 const apiModuleA = new ApiModule({
@@ -26,18 +27,18 @@ const apiModuleB = new ApiModule({
     module: true
 });
 
-ApiModule.registeForeRequestMiddleWare((apiMeta, data, next) => {
+ApiModule.registerForeRequestMiddleWare((apiMeta, data, next) => {
     console.log(apiMeta.url);
     next();
 })
 
-apiModuleA.registeForeRequestMiddleWare((apiMeta, data, next) => {
+apiModuleA.registerForeRequestMiddleWare((apiMeta, data, next) => {
     console.log(apiMeta)
     console.log(data)
     next();
 })
 
-apiModuleA.registeFallbackMiddleWare((apiMeta, error, next) => {
+apiModuleA.registerFallbackMiddleWare((apiMeta, error, next) => {
     console.log(apiMeta)
     // console.error(error)
     next(error);

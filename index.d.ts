@@ -75,11 +75,11 @@ export interface TransformedApiMap {
 declare class ApiModule {
   constructor(config: ApiModuleConfig);
 
-  static registeForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
-  static registeFallbackMiddleWare(fallbackHook: FallbackHook): void;
+  static registerForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
+  static registerFallbackMiddleWare(fallbackHook: FallbackHook): void;
 
-  registeForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
-  registeFallbackMiddleWare(fallbackHook: FallbackHook): void;
+  registerForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
+  registerFallbackMiddleWare(fallbackHook: FallbackHook): void;
 
   /**
    * Get moduled/single module namespace api map

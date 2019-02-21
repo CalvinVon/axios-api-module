@@ -10,8 +10,8 @@ import axios from 'axios';
  * @member {Function} foreRequestHook
  * @member {Function} fallbackHook
  * 
- * @method registeForeRequestMiddleWare(hook)
- * @method registeFallbackMiddleWare(hook)
+ * @method registerForeRequestMiddleWare(hook)
+ * @method registerFallbackMiddleWare(hook)
  * @method getAxios()
  * @method getInstance(hook)
  */
@@ -63,7 +63,7 @@ export default class ApiModule {
      * Registe ForeRequest MiddleWare Globally (For All Instance)
      * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
      */
-    static registeForeRequestMiddleWare(foreRequestHook = new Function()) {
+    static registerForeRequestMiddleWare(foreRequestHook = new Function()) {
         ApiModule.foreRequestHook = foreRequestHook;
     }
 
@@ -71,7 +71,7 @@ export default class ApiModule {
      * Registe ForeRequest MiddleWare Globally (For All Instance)
      * @param {Function} fallbackHook(apiMeta, data = {}, next) 
      */
-    static registeFallbackMiddleWare(fallbackHook = new Function()) {
+    static registerFallbackMiddleWare(fallbackHook = new Function()) {
         ApiModule.fallbackHook = fallbackHook;
     }
 
@@ -79,7 +79,7 @@ export default class ApiModule {
      * Registe ForeRequest MiddleWare
      * @param {Function} foreRequestHook(apiMeta, data = {}, next)
      */
-    registeForeRequestMiddleWare(foreRequestHook = new Function()) {
+    registerForeRequestMiddleWare(foreRequestHook = new Function()) {
         this.foreRequestHook = foreRequestHook;
     }
 
@@ -87,7 +87,7 @@ export default class ApiModule {
      * Registe Fallback MiddleWare
      * @param {Function} fallbackHook(apiMeta, data = {}, next)
      */
-    registeFallbackMiddleWare(fallbackHook = new Function()) {
+    registerFallbackMiddleWare(fallbackHook = new Function()) {
         this.fallbackHook = fallbackHook;
     }
 

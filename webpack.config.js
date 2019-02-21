@@ -6,11 +6,12 @@ module.exports = {
     entry: {
         'axios-api-module': './src/index.js'
     },
+    externals: ['axios'],
     output: {
         path: path.resolve(__dirname, './dist'),
         filename: '[name].min.js',
         libraryTarget: 'umd',
-        library: 'axios-api-module',
+        library: 'ApiModule',
         globalObject: 'typeof self !== \'undefined\' ? self : this',
     },
     module: {
