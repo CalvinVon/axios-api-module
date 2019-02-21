@@ -14,7 +14,7 @@ npm i @calvin_von/axios-api-module -S
 ```
 or via yarn:
 ```bash
-yarn add @shopify/draggable
+yarn add @calvin_von/axios-api-module
 ```
 
 or via CDN
