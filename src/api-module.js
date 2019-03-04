@@ -14,6 +14,7 @@ import axios from 'axios';
  * @method registerFallbackMiddleWare(hook)
  * @method getAxios()
  * @method getInstance(hook)
+ * @method generateCancellationSource() get axios cancellation source for cancel api
  */
 export default class ApiModule {
 

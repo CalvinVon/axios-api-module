@@ -68,6 +68,7 @@ const apis = apiMod.getInstance();
 Vue.prototype.$api = apis;
 // Vue.prototype.$foregroundApi = foregroundApis;
 
+const config = { /* Axios Request Config */ };
 // use
 this.$api.user.getInfo({
     params: {
@@ -76,7 +77,7 @@ this.$api.user.getInfo({
     query: {
         ts: Date.now()
     }
-})
+}, config)
 ...
 apis.$module === apiMod;    // true
 ```
@@ -116,7 +117,8 @@ Whether enable moduled namespace
   });
 
   // use
-  apiMod.getInstance().main.getList({ query: { sort: -1 } });
+  const api = apiMod.getInstance();
+  api.main.getList({ query: { sort: -1 } });
   ```
 - `false` single namespace.
   ```js
@@ -132,19 +134,47 @@ Whether enable moduled namespace
   });
 
   // use
-  apiMod.getInstance().getList({ query: { sort: -1 } });
+  const api = apiMod.getInstance();
+  api.getList({ query: { sort: -1 } });
   ```
 
 # Methods
 ### Static Method
 - `registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`
-  
-  Register fore-request middle ware function.**Affect all instance**
 
   params:
     - `apiMeta`: `apiMetas` option single meta info you passed in
     - `data`: parameters passed in api method
-    - `next(error?)` call `next` function to go next step.If `error` passed in,
+    - `next(error?)` call `next` function to go next step.If `error` passed in
+  
+  Register fore-request middle ware function.**Affect all instance**.
+  You can do every thing here, for example, validate data schema before every request.
+
+  > The following code used a simple validate tool, [obeyman(Calvin/Obeyman)](https://github.com/CalvinVon/Obeyman), to validate data.
+
+    ```js
+    // e.g. import a simple data validator ()
+    import Obeyman from 'obeyman';
+    import ApiModule from "@calvin_von/axios-api-module";
+
+    // For all instances
+    ApiModule.registerForeRequestMiddleWare((apiMeta, data, next) => {
+        const { name, method, url /* , or other custom fields */ } = apiMeta;
+        console.log(apiMeta.url);
+
+        // `next` function must be called
+        next();
+    });
+
+
+    const backendApi = new ApiModule({ /*...*/ });
+    // Just for `backendApi`
+    backendApi.registerForeRequestMiddleWare((apiMeta, data, next) => {
+        console.log(apiMeta)
+        console.log(data)
+        next();
+    });
+    ```
 
 - `registerFallbackMiddleWare(fallbackHook: (apiMeta, error, next) => null)`
   
@@ -163,6 +193,61 @@ Whether enable moduled namespace
 - `registerFallbackMiddleWare(fallbackHook: (apiMeta, error, next) => null)`
 
   Same as static method.But **only affect single instance**.
+
+- `getInstance(): TransformedApiMap | { [namespace: string]: TransformedApiMap, $module?: ApiModule };`
+  Get transformed api map object.
+  ```js
+  const apiModule = new ApiModule({ /*...*/ });
+  const api = apiModule.getInstance();
+
+  // Send a request
+  api.xxx({ /* `query`, `body`, `params` data here */ }, { /* Axios Request Config */ });
+  ```
+
+- `generateCancellationSource(): CancelTokenSource`
+  
+  Generate axios `Cancellation` source.
+
+  You can use axios `cancellation`,([docs about axios#cancellation](https://github.com/axios/axios#cancellation))
+  ```js
+  import axios from 'axios';
+
+  const CancelToken = axios.CancelToken;
+  const source = CancelToken.source();
+
+  ...
+  ```
+
+  or just use `#generateCancellationSource()`
+  ```js
+    ...
+    
+    const api = apiMod.getInstance();
+    const cancelSourceA = api.$module.generateCancellationSource();
+    const cancelSourceB = api.$module.generateCancellationSource();
+
+    // send a request
+    const requestA = api.test({
+        query: {
+            a: 123
+        },
+    }, {
+        cancelToken: cancelSourceA.token
+    });
+
+    const requestB = api.test({
+        query: {
+            b: 321
+        },
+    }, {
+        cancelToken: cancelSourceB.token
+    });
+
+    cancelSourceA.cancel('Canceled by the user');
+
+    // requestA would be rejected by reason `Canceled by the user`
+    // requestB ok!
+  ```
 
 # LICENSE
 [MIT LICENSE](./LICENSE)
