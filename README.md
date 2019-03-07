@@ -67,6 +67,7 @@ const apis = apiMod.getInstance();
 // NOTE: You can create multiple instance, typically when `module` option set to `false`
 Vue.prototype.$api = apis;
 // Vue.prototype.$foregroundApi = foregroundApis;
+// Vue.prototype.$backgroundApi = backgroundApis;
 
 const config = { /* Axios Request Config */ };
 // use
@@ -84,13 +85,13 @@ apis.$module === apiMod;    // true
 # Options
 ```js
 const apiMod = new ApiModule({
-    module: true,           // Boolean, whether moduled namespace
-    console: true,          // Boolean, switch log on off
+    module: true,                       // Boolean, whether moduled namespace
+    console: true,                      // Boolean, switch log on off
     apiMetas: {
-        main: {             // namespace module
+        main: {                         // namespace module
             getList: {
-                name: 'get list',   // request name
-                method: 'get',      // request method "get" | "post" | "patch" | "delete" | "put" | "head"
+                name: 'get list',       // request name
+                method: 'get',          // request method "get" | "post" | "patch" | "delete" | "put" | "head"
                 url: '/api/user/list'
             }
         }
@@ -100,7 +101,7 @@ const apiMod = new ApiModule({
 ---
 `module` option
 
-Whether enable moduled namespace
+Whether enable modular namespaces
 - `true` (default) You can use moduled namespace.
   ```js
   const apiMod = new ApiModule({
@@ -120,7 +121,7 @@ Whether enable moduled namespace
   const api = apiMod.getInstance();
   api.main.getList({ query: { sort: -1 } });
   ```
-- `false` single namespace.
+- `false` single namespace
   ```js
   const apiMod = new ApiModule({
     module: false,
@@ -145,9 +146,9 @@ Whether enable moduled namespace
   params:
     - `apiMeta`: `apiMetas` option single meta info you passed in
     - `data`: parameters passed in api method
-    - `next(error?)` call `next` function to go next step.If `error` passed in
+    - `next(error?)` call `next` function to go next step.If `error` passed in, the request would be rejected.
   
-  Register fore-request middle ware function.**Affect all instance**.
+  Register fore-request middle ware function. **Affect all instances**.
   You can do every thing here, for example, validate data schema before every request.
 
   > The following code used a simple validate tool, [obeyman(Calvin/Obeyman)](https://github.com/CalvinVon/Obeyman), to validate data.
@@ -178,7 +179,7 @@ Whether enable moduled namespace
 
 - `registerFallbackMiddleWare(fallbackHook: (apiMeta, error, next) => null)`
   
-  Register fallback middle ware function.Called when error occurred.**Affect all instance**
+  Register fallback middle ware function.Called when error occurred. **Affect all instances**
 
   params:
     - `apiMeta`: `apiMetas` option single meta info you passed in
@@ -208,7 +209,7 @@ Whether enable moduled namespace
   
   Generate axios `Cancellation` source.
 
-  You can use axios `cancellation`,([docs about axios#cancellation](https://github.com/axios/axios#cancellation))
+  You can use axios `cancellation`, ([docs about axios#cancellation](https://github.com/axios/axios#cancellation))
   ```js
   import axios from 'axios';
 
