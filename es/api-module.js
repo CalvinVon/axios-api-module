@@ -16,6 +16,7 @@ import axios from 'axios';
  * @method registerFallbackMiddleWare(hook)
  * @method getAxios()
  * @method getInstance(hook)
+ * @method generateCancellationSource() get axios cancellation source for cancel api
  */
 
 var ApiModule =
@@ -37,12 +38,14 @@ function () {
     var _config$apiMetas = config.apiMetas,
         apiMetas = _config$apiMetas === void 0 ? {} : _config$apiMetas,
         _config$module = config.module,
-        moduledNsp = _config$module === void 0 ? true : _config$module,
+        modularNsp = _config$module === void 0 ? true : _config$module,
         _config$console = config.console,
-        console = _config$console === void 0 ? true : _config$console;
+        useConsole = _config$console === void 0 ? true : _config$console,
+        _config$baseConfig = config.baseConfig,
+        baseConfig = _config$baseConfig === void 0 ? {} : _config$baseConfig;
     var API_ = {};
 
-    if (moduledNsp) {
+    if (modularNsp) {
       // moduled namespace
       Object.keys(apiMetas).forEach(function (apiName) {
         API_[apiName] = _this._Proxyable(apiMetas[apiName]);
@@ -62,8 +65,9 @@ function () {
       axios: axios,
       apiMetas: apiMetas,
       apis: API_,
-      module: moduledNsp,
-      console: console
+      module: modularNsp,
+      console: useConsole,
+      baseConfig: baseConfig
     };
   }
   /**
@@ -226,7 +230,7 @@ function () {
             if (err) {
               _this3.fallbackMiddleWare(target[key], err, reject);
             } else {
-              var config = Object.assign({
+              var config = Object.assign({}, _this3.options.baseConfig, {
                 method: method.toLowerCase(),
                 url: parsedUrl,
                 params: query,

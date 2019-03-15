@@ -39,6 +39,14 @@ import ApiModule from "@calvin_von/axios-api-module";
 
 // create a moduled namespace ApiModule instance
 const apiMod = new ApiModule({
+    baseConfig: {
+        baseURL: 'http://api.yourdomain.com',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        },
+        withCredentials: true,
+        timeout: 60000
+    },
     module: true,
     apiMetas: {
         main: {
@@ -62,26 +70,51 @@ const apiMod = new ApiModule({
 
 // get transformed api map instance
 const apis = apiMod.getInstance();
+const axiosInstance = apiMod.getAxios();
 
-// Example: Mount to Vue prototype
-// NOTE: You can create multiple instance, typically when `module` option set to `false`
-Vue.prototype.$api = apis;
-// Vue.prototype.$foregroundApi = foregroundApis;
-// Vue.prototype.$backgroundApi = backgroundApis;
+apis.$module === apiMod;    // true
 
+// request
 const config = { /* Axios Request Config */ };
-// use
-this.$api.user.getInfo({
+
+apis.user.getInfo({
     params: {
         uid: this.uid
     },
     query: {
         ts: Date.now()
     }
-}, config)
+}, config);
+
 ...
-apis.$module === apiMod;    // true
 ```
+
+### Intercepter
+Register axios intercepter for **only single instance**
+
+```js
+axiosInstance.interceptors.request.use(
+    function (config) {
+        return config;
+    }, 
+    function (error) {
+        return Promise.reject(error);
+    }
+);
+
+axiosInstance.interceptors.response.use(
+    function (response) {
+        if (response.data.status === 200) {
+            return response.data;
+        }
+        return Promise.reject(new Error(response.msg));
+    },
+    function (error) {
+        return Promise.reject(error);
+    }
+);
+```
+
 # Options
 ```js
 const apiMod = new ApiModule({
@@ -122,6 +155,7 @@ Whether enable modular namespaces
   api.main.getList({ query: { sort: -1 } });
   ```
 - `false` single namespace
+
   ```js
   const apiMod = new ApiModule({
     module: false,
@@ -137,6 +171,14 @@ Whether enable modular namespaces
   // use
   const api = apiMod.getInstance();
   api.getList({ query: { sort: -1 } });
+  ```
+
+  > Example in Vue.js:  
+    You can create multiple instance, typically when `module` option set to `false`
+
+  ```js
+  Vue.prototype.$foregroundApi = foregroundApis;
+  Vue.prototype.$backgroundApi = backgroundApis;
   ```
 
 # Methods

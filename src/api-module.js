@@ -25,16 +25,18 @@ export default class ApiModule {
     foreRequestHook;
     fallbackHook;
 
+
     constructor(config = {}) {
         const {
             apiMetas = {},
-            module: moduledNsp = true,
-            console = true
+            module: modularNsp = true,
+            console: useConsole = true,
+            baseConfig = {},
         } = config;
 
         let API_ = {};
 
-        if (moduledNsp) {
+        if (modularNsp) {
             // moduled namespace
             Object.keys(apiMetas).forEach(apiName => {
                 API_[apiName] = this._Proxyable(apiMetas[apiName]);
@@ -55,10 +57,13 @@ export default class ApiModule {
             axios,
             apiMetas,
             apis: API_,
-            module: moduledNsp,
-            console
+            module: modularNsp,
+            console: useConsole,
+            baseConfig
         };
     }
+
+
 
     /**
      * Registe ForeRequest MiddleWare Globally (For All Instance)
@@ -208,12 +213,17 @@ export default class ApiModule {
                         this.fallbackMiddleWare(target[key], err, reject)
                     } else {
 
-                        const config = Object.assign({
-                            method: method.toLowerCase(),
-                            url: parsedUrl,
-                            params: query,
-                            data: body,
-                        }, opt);
+                        const config = Object.assign(
+                            {},
+                            this.options.baseConfig,
+                            {
+                                method: method.toLowerCase(),
+                                url: parsedUrl,
+                                params: query,
+                                data: body,
+                            },
+                            opt
+                        );
 
                         axios(config)
                             .then(data => resolve(data))

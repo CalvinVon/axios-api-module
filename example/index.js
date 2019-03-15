@@ -3,6 +3,10 @@ const ApiModule = require("../lib");
 // const ApiModule = require("../dist/axios-api-module.min.js");
 
 const apiModuleA = new ApiModule({
+    baseConfig: {
+        baseURL: 'http://api.domain.com',
+        timeout: 1000
+    },
     apiMetas: {
         A: {
             aaa: {
