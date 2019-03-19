@@ -37,7 +37,7 @@ import ApiModule from "@calvin_von/axios-api-module";
 // or CDN import
 // var ApiModule = window['ApiModule'];
 
-// create a moduled namespace ApiModule instance
+// create a modular namespace ApiModule instance
 const apiMod = new ApiModule({
     baseConfig: {
         baseURL: 'http://api.yourdomain.com',
@@ -70,7 +70,6 @@ const apiMod = new ApiModule({
 
 // get transformed api map instance
 const apis = apiMod.getInstance();
-const axiosInstance = apiMod.getAxios();
 
 apis.$module === apiMod;    // true
 
@@ -93,6 +92,8 @@ apis.user.getInfo({
 Register axios intercepter for **only single instance**
 
 ```js
+const axiosInstance = apiMod.getAxios();
+
 axiosInstance.interceptors.request.use(
     function (config) {
         return config;
@@ -118,7 +119,8 @@ axiosInstance.interceptors.response.use(
 # Options
 ```js
 const apiMod = new ApiModule({
-    module: true,                       // Boolean, whether moduled namespace
+    baseConfig: { /*...*/ },            // Object, axios request config
+    module: true,                       // Boolean, whether modular namespace
     console: true,                      // Boolean, switch log on off
     apiMetas: {
         main: {                         // namespace module
@@ -132,10 +134,16 @@ const apiMod = new ApiModule({
 });
 ```
 ---
+`baseConfig` option
+Set base axios request config for single api module.
+
+> More details about baseConfig, see [Axios Doc(#Request Config)](https://github.com/axios/axios#request-config)
+
+
 `module` option
 
 Whether enable modular namespaces
-- `true` (default) You can use moduled namespace.
+- `true` (default) You can use modular namespace.
   ```js
   const apiMod = new ApiModule({
     module: true,
@@ -202,8 +210,15 @@ Whether enable modular namespaces
 
     // For all instances
     ApiModule.registerForeRequestMiddleWare((apiMeta, data, next) => {
-        const { name, method, url /* , or other custom fields */ } = apiMeta;
-        console.log(apiMeta.url);
+        const { name, method, url /* , or other custom fields */, schema } = apiMeta;
+        
+        if (schema) {
+            Obeyman.validate(data, schema, (err, stack) => {
+                if (err) {
+                    console.warn(`Api [${name}] validate failed\n`, stack);
+                }
+            });
+        }
 
         // `next` function must be called
         next();
