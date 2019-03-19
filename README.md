@@ -135,6 +135,7 @@ const apiMod = new ApiModule({
 ```
 ---
 `baseConfig` option
+
 Set base axios request config for single api module.
 
 > More details about baseConfig, see [Axios Doc(#Request Config)](https://github.com/axios/axios#request-config)
