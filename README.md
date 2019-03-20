@@ -28,6 +28,9 @@ or via CDN
 
 ```
 ### Typical Usage
+
+> [Live demo](https://stackblitz.com/edit/test-axios-api-module) with modular file splitting.
+
 ```js
 // You can import axios to set the interceptor
 // NOTE: axios is already a part of the dependency, you don't need to install again.
@@ -83,8 +86,20 @@ apis.user.getInfo({
     query: {
         ts: Date.now()
     }
-}, config);
+}, config)
+    .then(function() {
 
+    })
+    .catch(function(err) {
+
+    })
+
+// is equal to
+axios.get(`/api/user/${this.uid}/info`, {
+    params: {
+        ts: Date.now()
+    }
+});
 ...
 ```
 
