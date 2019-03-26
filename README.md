@@ -1,11 +1,11 @@
 # axios-api-module
 Encapsulated api module based on axios.
 
-[![version](https://img.shields.io/npm/v/@calvin_von/axios-api-module.svg)](https://github.com/CalvinVon/axios-api-module)
+[![version](https://img.shields.io/npm/v/@calvin_von/axios-api-module.svg)](https://www.npmjs.com/package/@calvin_von/axios-api-module)
 [![](https://img.shields.io/npm/dt/@calvin_von/axios-api-module.svg)](https://github.com/CalvinVon/axios-api-module)
 [![](https://img.shields.io/github/size/CalvinVon/axios-api-module/dist/axios-api-module.min.js.svg?label=minified%20size)](https://github.com/CalvinVon/axios-api-module/blob/master/dist/axios-api-module.min.js)
 [![](https://data.jsdelivr.com/v1/package/npm/@calvin_von/axios-api-module/badge)](https://www.jsdelivr.com/package/npm/@calvin_von/axios-api-module)
-![dependencies](https://img.shields.io/david/CalvinVon/axios-api-module.svg)
+[![dependencies](https://img.shields.io/david/CalvinVon/axios-api-module.svg)](https://www.npmjs.com/package/@calvin_von/axios-api-module)
 
 # Getting Started
 ### Install
