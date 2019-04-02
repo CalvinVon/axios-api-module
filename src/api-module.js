@@ -157,7 +157,7 @@ export default class ApiModule {
         }
 
         if (typeof hookFunction === 'function') {
-            hookFunction(apiMeta, error, defaultErrorHandler);
+            hookFunction(apiMeta, error, next);
         } else {
             defaultErrorHandler(error);
         }
