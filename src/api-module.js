@@ -1,5 +1,13 @@
 import axios from 'axios';
 
+const defaultForeRequestHook = () => {
+    return (_, __, next) => next();
+};
+
+const defaultFallbackHook = () => {
+    return (_, { error }, next) => next(error);
+};
+
 /**
  * Api Module class
  * 
@@ -54,7 +62,7 @@ export default class ApiModule {
         });
 
         this.options = {
-            axios,
+            axios: axios.create(baseConfig),
             apiMetas,
             apis: API_,
             module: modularNsp,
@@ -69,7 +77,7 @@ export default class ApiModule {
      * Register Globally ForeRequest MiddleWare Globally (For All Instance)
      * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
      */
-    static globalForeRequestMiddleWare(foreRequestHook = new Function()) {
+    static globalForeRequestMiddleWare(foreRequestHook = defaultForeRequestHook()) {
         ApiModule.foreRequestHook = foreRequestHook;
     }
 
@@ -77,7 +85,7 @@ export default class ApiModule {
      * Register Globally ForeRequest MiddleWare Globally (For All Instance)
      * @param {Function} fallbackHook(apiMeta, data = {}, next) 
      */
-    static globalFallbackMiddleWare(fallbackHook = new Function()) {
+    static globalFallbackMiddleWare(fallbackHook = defaultFallbackHook()) {
         ApiModule.fallbackHook = fallbackHook;
     }
 
@@ -85,7 +93,7 @@ export default class ApiModule {
      * Registe ForeRequest MiddleWare
      * @param {Function} foreRequestHook(apiMeta, data = {}, next)
      */
-    registerForeRequestMiddleWare(foreRequestHook = new Function()) {
+    registerForeRequestMiddleWare(foreRequestHook = defaultForeRequestHook()) {
         this.foreRequestHook = foreRequestHook;
     }
 
@@ -93,7 +101,7 @@ export default class ApiModule {
      * Registe Fallback MiddleWare
      * @param {Function} fallbackHook(apiMeta, data = {}, next)
      */
-    registerFallbackMiddleWare(fallbackHook = new Function()) {
+    registerFallbackMiddleWare(fallbackHook = defaultFallbackHook()) {
         this.fallbackHook = fallbackHook;
     }
 
@@ -125,11 +133,12 @@ export default class ApiModule {
      * @param {Object} data request data
      * @param {Query/Body} next(err) call for next step
      */
-    foreRequestMiddleWare(apiMeta, data = {}, next) {
-        const hookFunction = this.foreRequestHook || ApiModule.foreRequestHook;
+    foreRequestMiddleWare(apiMeta, data, next) {
+        const hookFunction = this.foreRequestHook || ApiModule.foreRequestHook || defaultForeRequestHook();
         if (typeof hookFunction === 'function') {
             hookFunction(apiMeta, data, next);
         } else {
+            console.warn(`[ApiModule] foreRequestMiddleWare: ${hookFunction} is not a valid foreRequestHook function`);
             next();
         }
     }
@@ -142,7 +151,7 @@ export default class ApiModule {
      */
     fallbackMiddleWare(apiMeta, data, next) {
         const error = data.error;
-        const hookFunction = this.fallbackHook || ApiModule.fallbackHook;
+        const hookFunction = this.fallbackHook || ApiModule.fallbackHook || defaultFallbackHook();
         const defaultErrorHandler = () => {
             if (this.options.console) {
                 const {
@@ -150,7 +159,7 @@ export default class ApiModule {
                     method,
                     url
                 } = apiMeta;
-                const msg = `ApiModule - ${name} [${method.toUpperCase()}]: [${url}] failed with ${error.message}`;
+                const msg = `[ApiModule] ${name} [${method.toUpperCase()}]: [${url}] failed with ${error.message}`;
                 console.error(new Error(msg));
             }
 
@@ -160,6 +169,7 @@ export default class ApiModule {
         if (typeof hookFunction === 'function') {
             hookFunction(apiMeta, data, next);
         } else {
+            console.warn(`[ApiModule] fallbackMiddleWare: ${hookFunction} is not a valid fallbackHook function`);
             defaultErrorHandler();
         }
     }
@@ -187,18 +197,18 @@ export default class ApiModule {
         } = target[key];
 
         if (!method || !url) {
-            console.log(`Check your api meta for [${key}]: `, target[key]);
-            throw new Error(`Api meta [${key}]: 'method' or 'url' value not found`);
+            console.log(`[ApiModule] Check your api meta for [${key}]: `, target[key]);
+            throw new Error(`[ApiModule] Api meta [${key}]: 'method' or 'url' value not found`);
         }
 
         let parsedUrl = url;
 
-        return (data = {}, opt = {}) => {
+        return (data, opt = {}) => {
             const {
                 query = {},
                 params = {},
                 body = {}
-            } = data;
+            } = data || {};
 
             return new Promise((resolve, reject) => {
 
@@ -217,7 +227,6 @@ export default class ApiModule {
 
                         const config = Object.assign(
                             {},
-                            this.options.baseConfig,
                             {
                                 method: method.toLowerCase(),
                                 url: parsedUrl,
@@ -227,7 +236,7 @@ export default class ApiModule {
                             opt
                         );
 
-                        axios(config)
+                        this.options.axios(config)
                             .then(data => resolve(data))
                             .catch(err => {
                                 this.fallbackMiddleWare(target[key], { data, error: err }, reject)

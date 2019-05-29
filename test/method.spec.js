@@ -1,6 +1,10 @@
 import chai, { expect } from 'chai';
-import ApiModule from '../src';
+import chaiAsPromised from 'chai-as-promised';
 import utils from './utils';
+import ApiModule from '../src';
+
+chai.use(chaiAsPromised);
+chai.should();
 
 describe('foreRequestMiddleWare methods', () => {
     let server;
@@ -14,9 +18,11 @@ describe('foreRequestMiddleWare methods', () => {
         server.on('listening', done);
     });
 
-    after('Stop and clean server', () => {
+    after('Stop and clean server', done => {
+        server.on('close', done);
         server.close();
         server = null;
+        ApiModule.foreRequestHook = null;
     });
 
     beforeEach('Setup ApiModule', () => {
@@ -48,38 +54,71 @@ describe('foreRequestMiddleWare methods', () => {
         apiMapper = apiModule.getInstance();
     });
 
-    it('static method registerForeRequestMiddleWare', done => {
+    afterEach('Clean ApiModule', () => {
+        testApiMeta = null;
+        testData = null;
+        apiModule = null;
+        apiMapper = null;
+    });
+
+    it('static method globalForeRequestMiddleWare', () => {
         ApiModule.globalForeRequestMiddleWare((apiMeta, data, next) => {
             expect(apiMeta).to.be.eq(testApiMeta);
             expect(data).to.be.eq(testData);
             next();
         });
 
-        apiMapper.test(testData).then(() => done());
+        return apiMapper.test(testData);
     });
 
-    it('instance method registerForeRequestMiddleWare', done => {
+    it('instance method globalForeRequestMiddleWare', () => {
         apiModule.registerForeRequestMiddleWare((apiMeta, data, next) => {
             expect(apiMeta).to.be.eq(testApiMeta);
             expect(data).to.be.eq(testData);
             next();
         });
 
-        apiMapper.test(testData).then(() => done());
+        return apiMapper.test(testData);
     });
 
-    it('instance method would override static method', done => {
+    it('instance method would override static method', () => {
         apiModule.registerForeRequestMiddleWare((apiMeta, data, next) => {
             next();
         });
         ApiModule.globalForeRequestMiddleWare((apiMeta, data, next) => {
             next();
-            expect.fail();
         });
-        apiMapper.test(testData).then(() => done());
+        return apiMapper.test(testData);
     });
 
-    // it('static method registerForeRequestMiddleWare')
+
+    it('static method passing `null` would not throw an error', () => {
+        ApiModule.globalForeRequestMiddleWare(null);
+        return apiMapper.test(testData).should.be.fulfilled;
+    });
+
+    it('static method passing `123` would not throw an error', () => {
+        ApiModule.globalForeRequestMiddleWare(123);
+        return apiMapper.test(testData).should.be.fulfilled;
+    });
+    
+    it('static method passing undefined would not throw an error', () => {
+        ApiModule.globalForeRequestMiddleWare();
+        return apiMapper.test(testData).should.be.fulfilled;
+    });
+
+    it('instance method passing undefined would not throw an error', () => {
+        apiModule.registerForeRequestMiddleWare();
+        return apiMapper.test(testData).should.be.fulfilled;
+    });
+
+    it('passed some error then reject the request', () => {
+        apiModule.registerForeRequestMiddleWare((_, __ , next) => {
+            next(new Error('some thing happened'));
+        });
+
+        return apiMapper.test(testData).should.be.rejectedWith('some thing happened');
+    })
 });
 
 describe('fallbackMiddleWare methods', () => {
@@ -94,7 +133,8 @@ describe('fallbackMiddleWare methods', () => {
         server.on('listening', done);
     });
 
-    after('Stop and clean server', () => {
+    after('Stop and clean server', done => {
+        server.on('close', done);
         server.close();
         server = null;
     });
@@ -131,23 +171,30 @@ describe('fallbackMiddleWare methods', () => {
         apiMapper = apiModule.getInstance();
     });
 
+    afterEach('Clean ApiModule', () => {
+        testApiMeta = null;
+        testData = null;
+        apiModule = null;
+        apiMapper = null;
+    });
+
     it('static method registerFallbackMiddleWare', () => {
         let middleware_error;
         ApiModule.globalFallbackMiddleWare((apiMeta, { data, error }, next) => {
-            expect(apiMeta).to.be.eq(testApiMeta);
-            expect(data).to.be.eq(testData);
+            expect(apiMeta).to.be.deep.eq(testApiMeta);
+            expect(data).to.be.deep.eq(testData);
             middleware_error = error;
             next(error);
         });
-        
+
         return apiMapper.test(testData).should.be.rejectedWith(middleware_error);
     });
 
     it('instance method registerFallbackMiddleWare', () => {
         let middleware_error;
         apiModule.registerFallbackMiddleWare((apiMeta, { data, error }, next) => {
-            expect(apiMeta).to.be.eq(testApiMeta);
-            expect(data).to.be.eq(testData);
+            expect(apiMeta).to.be.deep.eq(testApiMeta);
+            expect(data).to.be.deep.eq(testData);
             middleware_error = error;
             next(error);
         });
@@ -163,10 +210,29 @@ describe('fallbackMiddleWare methods', () => {
         });
         ApiModule.globalFallbackMiddleWare((apiMeta, { error }, next) => {
             next(error);
-            expect.fail();
         });
-        
+
         return apiMapper.test(testData).should.be.rejectedWith(middleware_error);
+    });
+
+    it('static method passing `null` would not throw an error', () => {
+        ApiModule.globalFallbackMiddleWare(null);
+        return apiMapper.test(testData).should.be.rejectedWith(/timeout/);
+    });
+
+    it('static method passing `123` would not throw an error', () => {
+        ApiModule.globalFallbackMiddleWare(123);
+        return apiMapper.test(testData).should.be.rejectedWith(/timeout/);
+    });
+
+    it('static method passing undefined would not throw an error', () => {
+        ApiModule.globalFallbackMiddleWare();
+        return apiMapper.test(testData).should.be.rejectedWith(/timeout/);
+    });
+
+    it('instance method passing undefined would not throw an error', () => {
+        apiModule.registerFallbackMiddleWare();
+        return apiMapper.test(testData).should.be.rejectedWith(/timeout/);
     });
 
 });

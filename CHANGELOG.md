@@ -6,6 +6,9 @@
 - **registerFallbackMiddleWare(fallbackHook):** change the second parameters to a object which contains `error` and `data` fields.
 - **`axios` dependence:** you need to install `axios` dependence by `npm i axios -S` additional
 
+### Bug fixes
+- **`getAxios`:** now return an axios instance by `axios.create(config)`
+
 ### Features
 - adding unit test and coverage test.
 - better error tips when you pass invalid values to `apiMetas`.

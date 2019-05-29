@@ -9,7 +9,7 @@
         "build:es": "cross-env BABEL_ENV=es babel src --out-dir es",
         "build:lib": "cross-env BABEL_ENV=umd babel src --out-dir lib",
         "build:dist": "cross-env BABEL_ENV=umd webpack --config webpack.config.js",
-        "test:unit": "cross-env BABEL_ENV=test mocha --require @babel/register --allow-uncaught",
+        "test:unit": "cross-env BABEL_ENV=test mocha --require @babel/register",
         "coverage:unit": "cross-env BABEL_ENV=test nyc mocha --require @babel/register"
     },
     "repository": {
@@ -39,6 +39,7 @@
         "babel-loader": "^8.0.5",
         "babel-plugin-add-module-exports": "^1.0.0",
         "chai": "^4.2.0",
+        "chai-as-promised": "^7.1.1",
         "cross-env": "^5.2.0",
         "istanbul": "^0.4.5",
         "mocha": "^6.1.4",
@@ -50,10 +51,10 @@
     "nyc": {
         "check-coverage": true,
         "per-file": true,
-        "statements": 0,
-        "lines": 0,
-        "functions": 0,
-        "branches": 0,
+        "statements": 95,
+        "lines": 95,
+        "functions": 95,
+        "branches": 95,
         "include": [
             "src/*.js"
         ],
@@ -74,5 +75,6 @@
             ".js"
         ],
         "cache": false
-    }
+    },
+    "dependencies": {}
 }
