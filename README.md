@@ -2,10 +2,32 @@
 Encapsulated api module based on axios.
 
 [![version](https://img.shields.io/npm/v/@calvin_von/axios-api-module.svg)](https://www.npmjs.com/package/@calvin_von/axios-api-module)
+[![codecov](https://codecov.io/gh/CalvinVon/axios-api-module/branch/master/graph/badge.svg)](https://codecov.io/gh/CalvinVon/axios-api-module)
 [![](https://img.shields.io/npm/dt/@calvin_von/axios-api-module.svg)](https://github.com/CalvinVon/axios-api-module)
 [![](https://img.shields.io/github/size/CalvinVon/axios-api-module/dist/axios-api-module.min.js.svg?label=minified%20size)](https://github.com/CalvinVon/axios-api-module/blob/master/dist/axios-api-module.min.js)
-[![](https://data.jsdelivr.com/v1/package/npm/@calvin_von/axios-api-module/badge)](https://www.jsdelivr.com/package/npm/@calvin_von/axios-api-module)
+[![Build Status](https://travis-ci.org/CalvinVon/axios-api-module.svg?branch=master)](https://travis-ci.org/CalvinVon/axios-api-module)
 [![dependencies](https://img.shields.io/david/CalvinVon/axios-api-module.svg)](https://www.npmjs.com/package/@calvin_von/axios-api-module)
+
+# Table of contents
+- [Getting Started](#Getting-Started)
+    - [Install](#Install)
+    - [Typical Usage](#Typical-Usage)
+    - [Intercepter](#Intercepter)
+- [Options](#Options)
+    - [`baseConfig` option](#`baseConfig`-option)
+    - [`module` option](#`module`-option)
+- [Methods](#Methods)
+    - [Static Method](#Static-Method)
+        - [`globalForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#globalForeRequestMiddleWare(foreRequestHook:-(apiMeta,-data,-next)-=>-null))
+        - [`globalFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`](#globalFallbackMiddleWare(fallbackHook:-(apiMeta,-data,-next)-=>-null))
+    - [Instance Method](#Instance-Method)
+        - [`registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerForeRequestMiddleWare(foreRequestHook:-(apiMeta,-data,-next)-=>-null))
+        - [`registerFallbackMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerFallbackMiddleWare(fallbackHook:-(apiMeta,-data,-next)-=>-null))
+        - [`getInstance()`](#getInstance())
+        - [`getAxios()`](#getAxios())
+        - [`generateCancellationSource()`](#generateCancellationSource())
+- [CHANGELOG](#CHANGELOG)
+- [LICENSE](#LICENSE)
 
 # Getting Started
 ### Install
@@ -149,14 +171,14 @@ const apiMod = new ApiModule({
 });
 ```
 ---
-`baseConfig` option
+## `baseConfig` option
 
 Set base axios request config for single api module.
 
 > More details about baseConfig, see [Axios Doc(#Request Config)](https://github.com/axios/axios#request-config)
 
 
-`module` option
+## `module` option
 
 Whether enable modular namespaces
 - `true` (default) You can use modular namespace.
@@ -206,14 +228,16 @@ Whether enable modular namespaces
   ```
 
 # Methods
-### Static Method
-- `registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`
+## Static Method
+### `globalForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`
 
-  params:
+- params:
     - `apiMeta`: `apiMetas` option single meta info you passed in
     - `data`: parameters passed in api method
     - `next(error?)` call `next` function to go next step.If `error` passed in, the request would be rejected.
   
+- description:
+
   Register fore-request middle ware function. **Affect all instances**.
   You can do every thing here, for example, validate data schema before every request.
 
@@ -225,7 +249,7 @@ Whether enable modular namespaces
     import ApiModule from "@calvin_von/axios-api-module";
 
     // For all instances
-    ApiModule.registerForeRequestMiddleWare((apiMeta, data, next) => {
+    ApiModule.globalForeRequestMiddleWare((apiMeta, data, next) => {
         const { name, method, url /* , or other custom fields */, schema } = apiMeta;
         
         if (schema) {
@@ -250,26 +274,52 @@ Whether enable modular namespaces
     });
     ```
 
-- `registerFallbackMiddleWare(fallbackHook: (apiMeta, error, next) => null)`
+### `globalFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`
   
-  Register fallback middle ware function.Called when error occurred. **Affect all instances**
+  > NOTE: If no fallbackMiddleware registered, a `defaultErrorHandler` will be used
 
-  params:
+- params:
     - `apiMeta`: `apiMetas` option single meta info you passed in
-    - `error`: error object
+    - `data`
+        - `data`: origin data passed
+        - `error`: `Error` instance
     - `next(error)` call `next` function to go next step
 
-### Instance Method
-- `registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`
+- description:
 
-  Same as static method.But **only affect single instance**.
+    Register fallback middle ware function.Called when error occurred. **Affect all instances**
 
-- `registerFallbackMiddleWare(fallbackHook: (apiMeta, error, next) => null)`
+    ```js
+    import ApiModule from "@calvin_von/axios-api-module";
 
-  Same as static method.But **only affect single instance**.
+    // For all instances
+    ApiModule.globalFallbackMiddleWare((apiMeta, { error }, next) => {
+        // an error must be passed in, or request would be seen as successful
+        next(error);
+    });
 
-- `getInstance(): TransformedApiMap | { [namespace: string]: TransformedApiMap, $module?: ApiModule };`
-  Get transformed api map object.
+
+    const backendApi = new ApiModule({ /*...*/ });
+    // Just for `backendApi`
+    backendApi.registerFallbackMiddleWare((apiMeta, { data, error }, next) => {
+        console.log(apiMeta)
+        console.log(data)
+        console.log(error)
+        // pass in custom error
+        next(new Error('Anther error'));
+    });
+    ```
+
+## Instance Method
+### `registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`
+- description: Same as static method.But **only affect single instance**.
+
+### `registerFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`
+- description: Same as static method.But **only affect single instance**.
+
+### `getInstance()`
+- return: `TransformedApiMap | { [namespace: string]: TransformedApiMap, $module?: ApiModule };`
+- description: Get transformed api map object.
   ```js
   const apiModule = new ApiModule({ /*...*/ });
   const api = apiModule.getInstance();
@@ -278,9 +328,17 @@ Whether enable modular namespaces
   api.xxx({ /* `query`, `body`, `params` data here */ }, { /* Axios Request Config */ });
   ```
 
-- `generateCancellationSource(): CancelTokenSource`
-  
-  Generate axios `Cancellation` source.
+### `getAxios()`
+- return: `AxiosInstance`
+- description: Get axios instance.
+  ```js
+  const apiModule = new ApiModule({ /*...*/ });
+  const axios = apiModule.getAxios();
+  ```
+
+### `generateCancellationSource()`
+- return: `CancelTokenSource`
+- description: Generate axios `Cancellation` source.
 
   You can use axios `cancellation`, ([docs about axios#cancellation](https://github.com/axios/axios#cancellation))
   ```js
@@ -322,6 +380,8 @@ Whether enable modular namespaces
     // requestA would be rejected by reason `Canceled by the user`
     // requestB ok!
   ```
+# CHANGELOG
+[CHANGELOG](./CHANGELOG)
 
 # LICENSE
 [MIT LICENSE](./LICENSE)

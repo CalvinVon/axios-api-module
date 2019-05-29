@@ -66,18 +66,18 @@ export default class ApiModule {
 
 
     /**
-     * Registe ForeRequest MiddleWare Globally (For All Instance)
+     * Register Globally ForeRequest MiddleWare Globally (For All Instance)
      * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
      */
-    static registerForeRequestMiddleWare(foreRequestHook = new Function()) {
+    static globalForeRequestMiddleWare(foreRequestHook = new Function()) {
         ApiModule.foreRequestHook = foreRequestHook;
     }
 
     /**
-     * Registe ForeRequest MiddleWare Globally (For All Instance)
+     * Register Globally ForeRequest MiddleWare Globally (For All Instance)
      * @param {Function} fallbackHook(apiMeta, data = {}, next) 
      */
-    static registerFallbackMiddleWare(fallbackHook = new Function()) {
+    static globalFallbackMiddleWare(fallbackHook = new Function()) {
         ApiModule.fallbackHook = fallbackHook;
     }
 
@@ -113,7 +113,7 @@ export default class ApiModule {
     }
 
     /**
-     * @returns {Object} get instance of api set object
+     * @returns {Object} get instance of api mapper
      */
     getInstance() {
         return this.options.apis;
@@ -140,7 +140,8 @@ export default class ApiModule {
      * @param {Error} error
      * @param {Function} next(err) call for next step
      */
-    fallbackMiddleWare(apiMeta, error, next) {
+    fallbackMiddleWare(apiMeta, data, next) {
+        const error = data.error;
         const hookFunction = this.fallbackHook || ApiModule.fallbackHook;
         const defaultErrorHandler = () => {
             if (this.options.console) {
@@ -157,9 +158,9 @@ export default class ApiModule {
         }
 
         if (typeof hookFunction === 'function') {
-            hookFunction(apiMeta, error, next);
+            hookFunction(apiMeta, data, next);
         } else {
-            defaultErrorHandler(error);
+            defaultErrorHandler();
         }
     }
 
@@ -176,7 +177,9 @@ export default class ApiModule {
 
     // map api meta to to request
     _ProxyApi(target, key) {
-        if (!target[key]) throw new ReferenceError('API ' + key + ' not exist');
+        if (Object.prototype.toString.call(target[key]) !== '[object Object]') {
+            throw new TypeError(`Api meta [${key}] is not an object`);
+        }
 
         const {
             method,
@@ -184,9 +187,8 @@ export default class ApiModule {
         } = target[key];
 
         if (!method || !url) {
-            console.error('[ApiModule error] invalid api meta found');
-            console.dir(target[key])
-            return;
+            console.log(`Check your api meta for [${key}]: `, target[key]);
+            throw new Error(`Api meta [${key}]: 'method' or 'url' value not found`);
         }
 
         let parsedUrl = url;
@@ -210,7 +212,7 @@ export default class ApiModule {
                 // fore request task
                 this.foreRequestMiddleWare(target[key], data, err => {
                     if (err) {
-                        this.fallbackMiddleWare(target[key], err, reject)
+                        this.fallbackMiddleWare(target[key], { data, error: err }, reject)
                     } else {
 
                         const config = Object.assign(
@@ -228,7 +230,7 @@ export default class ApiModule {
                         axios(config)
                             .then(data => resolve(data))
                             .catch(err => {
-                                this.fallbackMiddleWare(target[key], err, reject)
+                                this.fallbackMiddleWare(target[key], { data, error: err }, reject)
                             });
                     }
                 })

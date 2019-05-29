@@ -9,10 +9,6 @@ module.exports = {
                         modules: false
                     }
                 ]
-            ],
-            plugins: [
-                "@babel/plugin-transform-runtime",
-                "@babel/plugin-proposal-class-properties"
             ]
         },
         "umd": {
@@ -26,10 +22,19 @@ module.exports = {
                 ]
             ],
             plugins: [
-                "@babel/plugin-transform-runtime",
-                "@babel/plugin-proposal-class-properties",
                 "add-module-exports"
             ]
+        },
+        "test": {
+            presets: [
+                [
+                    "@babel/preset-env"
+                ]
+            ]
         }
-    }
+    },
+    plugins: [
+        "@babel/plugin-transform-runtime",
+        "@babel/plugin-proposal-class-properties"
+    ]
 }

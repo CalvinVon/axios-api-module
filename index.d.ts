@@ -1,7 +1,7 @@
 import { AxiosRequestConfig, AxiosInstance, CancelTokenSource } from "axios";
 
 export interface ApiModuleConfig {
-    apiMetas: ApiMetaMap | { [namespace: string]: ApiMetaMap };
+    apiMetas: ApiMetaMapper | { [namespace: string]: ApiMetaMapper };
     module?: Boolean;
     console?: Boolean;
     baseConfig?: AxiosRequestConfig;
@@ -15,11 +15,11 @@ export type ForeRequestHook = (
 
 export type FallbackHook = (
     apiMeta: ApiMeta,
-    error: Error,
+    data: { error: Error, data: Object },
     next: (error?: Error) => null
 ) => void;
 
-export interface ApiMetaMap {
+export interface ApiMetaMapper {
     [apiMetaName: string]: ApiMeta;
 }
 
@@ -40,14 +40,14 @@ export type TransformedApi = (
     opt?: AxiosRequestConfig
 ) => Promise<any>;
 
-export interface TransformedApiMap {
+export interface TransformedApiMapper {
     $module?: ApiModule;
     [apiMetaName: string]: TransformedApi;
 }
 
 export interface ApiModuleOptions {
     axios: AxiosInstance;
-    apiMetas: ApiMetaMap | { [namespace: string]: ApiMetaMap };
+    apiMetas: ApiMetaMapper | { [namespace: string]: ApiMetaMapper };
     apis: Object;
     module: boolean;
     console: boolean;
@@ -58,8 +58,8 @@ declare class ApiModule {
     constructor(config: ApiModuleConfig);
 
     options: ApiModuleOptions;
-    static registerForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
-    static registerFallbackMiddleWare(fallbackHook: FallbackHook): void;
+    static globalForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
+    static globalFallbackMiddleWare(fallbackHook: FallbackHook): void;
 
     registerForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
     registerFallbackMiddleWare(fallbackHook: FallbackHook): void;
@@ -68,8 +68,11 @@ declare class ApiModule {
      * Get moduled/single module namespace api map
      */
     getInstance():
-        | TransformedApiMap
-        | { [namespace: string]: TransformedApiMap; $module?: ApiModule };
+        | TransformedApiMapper
+        | {
+            [namespace: string]: TransformedApiMapper;
+            $module?: ApiModule
+        };
     getAxios(): any;
     generateCancellationSource(): CancelTokenSource;
 }
