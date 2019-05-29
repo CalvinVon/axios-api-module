@@ -217,22 +217,22 @@ describe('fallbackMiddleWare methods', () => {
 
     it('static method passing `null` would not throw an error', () => {
         ApiModule.globalFallbackMiddleWare(null);
-        return apiMapper.test(testData).should.be.rejectedWith(/timeout/);
+        return apiMapper.test(testData).should.be.rejectedWith(/(connect ECONNREFUSED|timeout)/);
     });
 
     it('static method passing `123` would not throw an error', () => {
         ApiModule.globalFallbackMiddleWare(123);
-        return apiMapper.test(testData).should.be.rejectedWith(/timeout/);
+        return apiMapper.test(testData).should.be.rejectedWith(/(connect ECONNREFUSED|timeout)/);
     });
 
     it('static method passing undefined would not throw an error', () => {
         ApiModule.globalFallbackMiddleWare();
-        return apiMapper.test(testData).should.be.rejectedWith(/timeout/);
+        return apiMapper.test(testData).should.be.rejectedWith(/(connect ECONNREFUSED|timeout)/);
     });
 
     it('instance method passing undefined would not throw an error', () => {
         apiModule.registerFallbackMiddleWare();
-        return apiMapper.test(testData).should.be.rejectedWith(/timeout/);
+        return apiMapper.test(testData).should.be.rejectedWith(/(connect ECONNREFUSED|timeout)/);
     });
 
 });
