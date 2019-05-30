@@ -1,5 +1,5 @@
 # axios-api-module
-Encapsulated api module based on axios.
+Encapsulated api module based on axios. [Live demo](https://stackblitz.com/edit/test-axios-api-module) with modular file splitting.
 
 [![version](https://img.shields.io/npm/v/@calvin_von/axios-api-module.svg)](https://www.npmjs.com/package/@calvin_von/axios-api-module)
 [![codecov](https://codecov.io/gh/CalvinVon/axios-api-module/branch/master/graph/badge.svg)](https://codecov.io/gh/CalvinVon/axios-api-module)
@@ -18,11 +18,11 @@ Encapsulated api module based on axios.
     - [`module` option](#`module`-option)
 - [Methods](#Methods)
     - [Static Method](#Static-Method)
-        - [`globalForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#globalForeRequestMiddleWare(foreRequestHook:-(apiMeta,-data,-next)-=>-null))
-        - [`globalFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`](#globalFallbackMiddleWare(fallbackHook:-(apiMeta,-data,-next)-=>-null))
+        - [`globalForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#globalforerequestmiddlewareforerequesthook-apimeta-data-next--null)
+        - [`globalFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`](#globalfallbackmiddlewarefallbackhook-apimeta-data-next--null)
     - [Instance Method](#Instance-Method)
-        - [`registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerForeRequestMiddleWare(foreRequestHook:-(apiMeta,-data,-next)-=>-null))
-        - [`registerFallbackMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerFallbackMiddleWare(fallbackHook:-(apiMeta,-data,-next)-=>-null))
+        - [`registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerforerequestmiddlewareforerequesthook-apimeta-data-next--null)
+        - [`registerFallbackMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerfallbackmiddlewarefallbackhook-apimeta-data-next--null)
         - [`getInstance()`](#getInstance())
         - [`getAxios()`](#getAxios())
         - [`generateCancellationSource()`](#generateCancellationSource())
@@ -50,8 +50,6 @@ or via CDN
 
 ```
 ### Typical Usage
-
-> [Live demo](https://stackblitz.com/edit/test-axios-api-module) with modular file splitting.
 
 ```js
 // You can import axios to set the interceptor
