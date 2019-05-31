@@ -7,19 +7,19 @@
 ### BREAKING CHANGES
 - **ApiModule#`globalForeRequestMiddleWare`:** method name changed from `registerForeRequestMiddleWare`
 - **ApiModule#`globalFallbackMiddleWare`:** method name changed from `registerFallbackMiddleWare`
-- **registerFallbackMiddleWare(fallbackHook):** change the second parameters to a object which contains `error` and `data` fields.
-- **`axios` dependence:** you need to install `axios` dependence by `npm i axios -S` additional
+- **registerFallbackMiddleWare(fallbackHook):** change the second parameters to an object which contains `error` and `data` fields.
+- **`axios` dependence:** you need to install `axios` dependence by `npm i axios -S` additional, cause you can have better control of dependency version.
 
 ### Bug fixes
 - **`getAxios`:** now return an axios instance by `axios.create(config)`
 
 ### Features
 - adding unit test and coverage test.
-- better error tips when you pass invalid values to `apiMetas`.
+- better error tips when you passing invalid values to `apiMetas` or registering middlewares.
 
 ## v1.3.2 [(2019-4-2)](https://github.com/CalvinVon/axios-api-module/compare/v1.3.0...v1.3.2release)
 ### Bug fixes
-- fix default error handler still invoked when `fallbackMiddle` registered.
+- fix default error handler would still be invoked when fallbackMiddle has been registered already.
 
 # v1.3.0 [(2019-3-19)](https://github.com/CalvinVon/axios-api-module/compare/v1.2.0...v1.3.0)
 ### Features

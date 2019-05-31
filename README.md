@@ -379,7 +379,7 @@ Whether enable modular namespaces
     // requestB ok!
   ```
 # CHANGELOG
-[CHANGELOG](./CHANGELOG)
+[CHANGELOG](./CHANGELOG.md)
 
 # LICENSE
 [MIT LICENSE](./LICENSE)
