@@ -229,22 +229,8 @@ function () {
       var parsedUrl = url;
       return function (data) {
         var opt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-        var _ref2 = data || {},
-            _ref2$query = _ref2.query,
-            query = _ref2$query === void 0 ? {} : _ref2$query,
-            _ref2$params = _ref2.params,
-            params = _ref2$params === void 0 ? {} : _ref2$params,
-            _ref2$body = _ref2.body,
-            body = _ref2$body === void 0 ? {} : _ref2$body;
-
         return new Promise(function (resolve, reject) {
-          // parse url
-          // handle api like /a/:id/b/{param}
-          parsedUrl = url.replace(/\B(?::(\w+)|{(\w+)})/g, function () {
-            return params[(arguments.length <= 1 ? undefined : arguments[1]) || (arguments.length <= 2 ? undefined : arguments[2])];
-          }); // fore request task
-
+          // fore request task
           _this3.foreRequestMiddleWare(target[key], data, function (err) {
             if (err) {
               _this3.fallbackMiddleWare(target[key], {
@@ -252,6 +238,19 @@ function () {
                 error: err
               }, reject);
             } else {
+              var _ref2 = data || {},
+                  _ref2$query = _ref2.query,
+                  query = _ref2$query === void 0 ? {} : _ref2$query,
+                  _ref2$params = _ref2.params,
+                  params = _ref2$params === void 0 ? {} : _ref2$params,
+                  _ref2$body = _ref2.body,
+                  body = _ref2$body === void 0 ? {} : _ref2$body; // parse url
+              // handle api like /a/:id/b/{param}
+
+
+              parsedUrl = url.replace(/\B(?::(\w+)|{(\w+)})/g, function () {
+                return params[(arguments.length <= 1 ? undefined : arguments[1]) || (arguments.length <= 2 ? undefined : arguments[2])];
+              });
               var config = Object.assign({}, {
                 method: method.toLowerCase(),
                 url: parsedUrl,

@@ -1,3 +1,7 @@
+## v1.4.1 [(2019-5-31)](https://github.com/CalvinVon/axios-api-module/compare/v1.4.0...v1.4.1)
+### Bug Fixes
+- fix the bug that the `data` option would be *parsed* first before processing in `foreRequestHook` function.
+
 # v1.4.0 [(2019-5-29)](https://github.com/CalvinVon/axios-api-module/compare/v1.3.2release...v1.4.0)
 
 ### BREAKING CHANGES

@@ -204,26 +204,26 @@ export default class ApiModule {
         let parsedUrl = url;
 
         return (data, opt = {}) => {
-            const {
-                query = {},
-                params = {},
-                body = {}
-            } = data || {};
-
             return new Promise((resolve, reject) => {
-
-                // parse url
-                // handle api like /a/:id/b/{param}
-                parsedUrl = url
-                    .replace(/\B(?::(\w+)|{(\w+)})/g, (...args) => {
-                        return params[args[1] || args[2]];
-                    })
-
                 // fore request task
                 this.foreRequestMiddleWare(target[key], data, err => {
                     if (err) {
                         this.fallbackMiddleWare(target[key], { data, error: err }, reject)
-                    } else {
+                    }
+                    else {
+
+                        const {
+                            query = {},
+                            params = {},
+                            body = {}
+                        } = data || {};
+
+                        // parse url
+                        // handle api like /a/:id/b/{param}
+                        parsedUrl = url
+                            .replace(/\B(?::(\w+)|{(\w+)})/g, (...args) => {
+                                return params[args[1] || args[2]];
+                            });
 
                         const config = Object.assign(
                             {},
