@@ -1,3 +1,7 @@
+## v1.5.1 [(2019-6-13)](https://github.com/CalvinVon/axios-api-module/compare/v1.5.0...v1.5.1)
+### Bug fixes
+- `postRequestMiddle` typo error
+
 # v1.5.0 [(2019-6-13)](https://github.com/CalvinVon/axios-api-module/compare/v1.4.1...v1.5.0)
 ### Features
 - add `globalPostRequestMiddleWare` static method

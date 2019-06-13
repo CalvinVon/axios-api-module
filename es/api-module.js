@@ -191,7 +191,7 @@ function () {
       var hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultPostRequestHook();
 
       if (typeof hookFunction === 'function') {
-        hookFunction(apiMeta, data, next);
+        hookFunction(apiMeta, res, next);
       } else {
         console.warn("[ApiModule] postRequestMiddleWare: ".concat(hookFunction, " is not a valid foreRequestHook function"));
         next(res);
