@@ -9,6 +9,12 @@ var defaultForeRequestHook = function defaultForeRequestHook() {
   };
 };
 
+var defaultPostRequestHook = function defaultPostRequestHook() {
+  return function (_, res, next) {
+    return next(res);
+  };
+};
+
 var defaultFallbackHook = function defaultFallbackHook() {
   return function (_, _ref, next) {
     var error = _ref.error;
@@ -46,6 +52,8 @@ function () {
     _defineProperty(this, "options", {});
 
     _defineProperty(this, "foreRequestHook", void 0);
+
+    _defineProperty(this, "postRequestHook", void 0);
 
     _defineProperty(this, "fallbackHook", void 0);
 
@@ -85,7 +93,7 @@ function () {
     };
   }
   /**
-   * Register Globally ForeRequest MiddleWare Globally (For All Instance)
+   * Register Globally Fore-Request MiddleWare Globally (For All Instance)
    * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
    */
 
@@ -94,12 +102,23 @@ function () {
     key: "registerForeRequestMiddleWare",
 
     /**
-     * Registe ForeRequest MiddleWare
+     * Registe Fore-Request MiddleWare
      * @param {Function} foreRequestHook(apiMeta, data = {}, next)
      */
     value: function registerForeRequestMiddleWare() {
       var foreRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultForeRequestHook();
       this.foreRequestHook = foreRequestHook;
+    }
+    /**
+     * Registe Post-Request MiddleWare
+     * @param {Function} foreRequestHook(apiMeta, data = {}, next)
+     */
+
+  }, {
+    key: "registerPostRequestMiddleWare",
+    value: function registerPostRequestMiddleWare() {
+      var postRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultPostRequestHook();
+      this.postRequestHook = postRequestHook;
     }
     /**
      * Registe Fallback MiddleWare
@@ -141,7 +160,7 @@ function () {
       return this.options.apis;
     }
     /**
-     * fore request middleware
+     * fore-request middleware
      * @param {ApiMeta} apiMeta api meta data
      * @param {Object} data request data
      * @param {Query/Body} next(err) call for next step
@@ -157,6 +176,25 @@ function () {
       } else {
         console.warn("[ApiModule] foreRequestMiddleWare: ".concat(hookFunction, " is not a valid foreRequestHook function"));
         next();
+      }
+    }
+    /**
+     * post-request middleware
+     * @param {ApiMeta} apiMeta api meta data
+     * @param {Object} res response data
+     * @param {Query/Body} next(err) call for next step
+     */
+
+  }, {
+    key: "postRequestMiddleWare",
+    value: function postRequestMiddleWare(apiMeta, res, next) {
+      var hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultPostRequestHook();
+
+      if (typeof hookFunction === 'function') {
+        hookFunction(apiMeta, data, next);
+      } else {
+        console.warn("[ApiModule] postRequestMiddleWare: ".concat(hookFunction, " is not a valid foreRequestHook function"));
+        next(res);
       }
     }
     /**
@@ -230,10 +268,11 @@ function () {
       return function (data) {
         var opt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         return new Promise(function (resolve, reject) {
-          // fore request task
-          _this3.foreRequestMiddleWare(target[key], data, function (err) {
+          var apiMeta = target[key]; // fore request task
+
+          _this3.foreRequestMiddleWare(apiMeta, data, function (err) {
             if (err) {
-              _this3.fallbackMiddleWare(target[key], {
+              _this3.fallbackMiddleWare(apiMeta, {
                 data: data,
                 error: err
               }, reject);
@@ -258,10 +297,10 @@ function () {
                 data: body
               }, opt);
 
-              _this3.options.axios(config).then(function (data) {
-                return resolve(data);
+              _this3.options.axios(config).then(function (res) {
+                _this3.postRequestMiddleWare(apiMeta, res, resolve);
               }).catch(function (err) {
-                _this3.fallbackMiddleWare(target[key], {
+                _this3.fallbackMiddleWare(apiMeta, {
                   data: data,
                   error: err
                 }, reject);
@@ -276,6 +315,17 @@ function () {
     value: function globalForeRequestMiddleWare() {
       var foreRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultForeRequestHook();
       ApiModule.foreRequestHook = foreRequestHook;
+    }
+    /**
+     * Register Globally Post-Request MiddleWare Globally (For All Instance)
+     * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
+     */
+
+  }, {
+    key: "globalPostRequestMiddleWare",
+    value: function globalPostRequestMiddleWare() {
+      var postRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultPostRequestHook();
+      ApiModule.postRequestHook = postRequestHook;
     }
     /**
      * Register Globally ForeRequest MiddleWare Globally (For All Instance)
@@ -294,6 +344,8 @@ function () {
 }();
 
 _defineProperty(ApiModule, "foreRequestHook", void 0);
+
+_defineProperty(ApiModule, "postRequestHook", void 0);
 
 _defineProperty(ApiModule, "fallbackHook", void 0);
 

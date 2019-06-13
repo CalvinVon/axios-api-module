@@ -32,7 +32,7 @@ const apiModuleB = new ApiModule({
     module: true
 });
 
-ApiModule.registerForeRequestMiddleWare((apiMeta, data, next) => {
+ApiModule.globalForeRequestMiddleWare((apiMeta, data, next) => {
     console.log(apiMeta.url);
     next();
 })

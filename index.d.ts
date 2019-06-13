@@ -13,6 +13,12 @@ export type ForeRequestHook = (
     next: (error?: Error) => null
 ) => void;
 
+export type PostRequestHook = (
+    apiMeta: ApiMeta,
+    res: Object | {},
+    next: (res: Object) => null
+) => void;
+
 export type FallbackHook = (
     apiMeta: ApiMeta,
     data: { error: Error, data: Object },
@@ -59,9 +65,11 @@ declare class ApiModule {
 
     options: ApiModuleOptions;
     static globalForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
+    static globalPostRequestMiddleWare(postRequestHook: PostRequestHook): void;
     static globalFallbackMiddleWare(fallbackHook: FallbackHook): void;
 
     registerForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
+    registerPostRequestMiddleWare(postRequestHook: PostRequestHook): void;
     registerFallbackMiddleWare(fallbackHook: FallbackHook): void;
 
     /**

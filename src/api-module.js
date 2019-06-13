@@ -4,6 +4,10 @@ const defaultForeRequestHook = () => {
     return (_, __, next) => next();
 };
 
+const defaultPostRequestHook = () => {
+    return (_, res, next) => next(res);
+};
+
 const defaultFallbackHook = () => {
     return (_, { error }, next) => next(error);
 };
@@ -27,10 +31,12 @@ const defaultFallbackHook = () => {
 export default class ApiModule {
 
     static foreRequestHook;
+    static postRequestHook;
     static fallbackHook;
 
     options = {};
     foreRequestHook;
+    postRequestHook;
     fallbackHook;
 
 
@@ -74,11 +80,19 @@ export default class ApiModule {
 
 
     /**
-     * Register Globally ForeRequest MiddleWare Globally (For All Instance)
+     * Register Globally Fore-Request MiddleWare Globally (For All Instance)
      * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
      */
     static globalForeRequestMiddleWare(foreRequestHook = defaultForeRequestHook()) {
         ApiModule.foreRequestHook = foreRequestHook;
+    }
+
+    /**
+     * Register Globally Post-Request MiddleWare Globally (For All Instance)
+     * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
+     */
+    static globalPostRequestMiddleWare(postRequestHook = defaultPostRequestHook()) {
+        ApiModule.postRequestHook = postRequestHook;
     }
 
     /**
@@ -90,11 +104,19 @@ export default class ApiModule {
     }
 
     /**
-     * Registe ForeRequest MiddleWare
+     * Registe Fore-Request MiddleWare
      * @param {Function} foreRequestHook(apiMeta, data = {}, next)
      */
     registerForeRequestMiddleWare(foreRequestHook = defaultForeRequestHook()) {
         this.foreRequestHook = foreRequestHook;
+    }
+
+    /**
+     * Registe Post-Request MiddleWare
+     * @param {Function} foreRequestHook(apiMeta, data = {}, next)
+     */
+    registerPostRequestMiddleWare(postRequestHook = defaultPostRequestHook()) {
+        this.postRequestHook = postRequestHook;
     }
 
     /**
@@ -128,7 +150,7 @@ export default class ApiModule {
     }
 
     /**
-     * fore request middleware
+     * fore-request middleware
      * @param {ApiMeta} apiMeta api meta data
      * @param {Object} data request data
      * @param {Query/Body} next(err) call for next step
@@ -140,6 +162,22 @@ export default class ApiModule {
         } else {
             console.warn(`[ApiModule] foreRequestMiddleWare: ${hookFunction} is not a valid foreRequestHook function`);
             next();
+        }
+    }
+
+    /**
+     * post-request middleware
+     * @param {ApiMeta} apiMeta api meta data
+     * @param {Object} res response data
+     * @param {Query/Body} next(err) call for next step
+     */
+    postRequestMiddleWare(apiMeta, res, next) {
+        const hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultPostRequestHook();
+        if (typeof hookFunction === 'function') {
+            hookFunction(apiMeta, data, next);
+        } else {
+            console.warn(`[ApiModule] postRequestMiddleWare: ${hookFunction} is not a valid foreRequestHook function`);
+            next(res);
         }
     }
 
@@ -205,10 +243,11 @@ export default class ApiModule {
 
         return (data, opt = {}) => {
             return new Promise((resolve, reject) => {
+                const apiMeta = target[key];
                 // fore request task
-                this.foreRequestMiddleWare(target[key], data, err => {
+                this.foreRequestMiddleWare(apiMeta, data, err => {
                     if (err) {
-                        this.fallbackMiddleWare(target[key], { data, error: err }, reject)
+                        this.fallbackMiddleWare(apiMeta, { data, error: err }, reject)
                     }
                     else {
 
@@ -237,9 +276,11 @@ export default class ApiModule {
                         );
 
                         this.options.axios(config)
-                            .then(data => resolve(data))
+                            .then(res => {
+                                this.postRequestMiddleWare(apiMeta, res, resolve);
+                            })
                             .catch(err => {
-                                this.fallbackMiddleWare(target[key], { data, error: err }, reject)
+                                this.fallbackMiddleWare(apiMeta, { data, error: err }, reject)
                             });
                     }
                 })

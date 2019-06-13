@@ -19,13 +19,15 @@ Encapsulated api module based on axios. [Live demo](https://stackblitz.com/edit/
 - [Methods](#Methods)
     - [Static Method](#Static-Method)
         - [`globalForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#globalforerequestmiddlewareforerequesthook-apimeta-data-next--null)
+        - [`globalPostRequestMiddleWare(postRequestHook: (apiMeta, res, next) => null)`](#globalpostrequestmiddlewarepostrequesthook-apimeta-res-next--null)
         - [`globalFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`](#globalfallbackmiddlewarefallbackhook-apimeta-data-next--null)
     - [Instance Method](#Instance-Method)
         - [`registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerforerequestmiddlewareforerequesthook-apimeta-data-next--null)
+        - [`registerPostRequestMiddleWare(postRequestHook: (apiMeta, res, next) => null)`](#registerpostrequestmiddlewarepostrequesthook-apimeta-res-next--null)
         - [`registerFallbackMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerfallbackmiddlewarefallbackhook-apimeta-data-next--null)
-        - [`getInstance()`](#getInstance())
-        - [`getAxios()`](#getAxios())
-        - [`generateCancellationSource()`](#generateCancellationSource())
+        - [`getInstance()`](#getInstance)
+        - [`getAxios()`](#getAxios)
+        - [`generateCancellationSource()`](#generateCancellationSource)
 - [CHANGELOG](#CHANGELOG)
 - [LICENSE](#LICENSE)
 
@@ -125,6 +127,14 @@ axios.get(`/api/user/${this.uid}/info`, {
 
 ### Intercepter
 Register axios intercepter for **only single instance**
+
+> Execution order between `axios intercepter` and `axios-api-module middlewares`
+> 1. fore-request middleware
+> 2. axios request intercepter
+> 3. axios response intercepter
+> 4. post-request or fallback middleware
+
+> We suggest that you'd better put *business code* in request middlewares.
 
 ```js
 const axiosInstance = apiMod.getAxios();
@@ -272,6 +282,49 @@ Whether enable modular namespaces
     });
     ```
 
+### `globalPostRequestMiddleWare(postRequestHook: (apiMeta, res, next) => null)`
+
+- params:
+    - `apiMeta`: `apiMetas` option single meta info you passed in.
+    - `res`: response data from server.
+    - `next(res)` call `next` function to go next step. A `res` parameter should be passed in.
+  
+- description:
+
+  Register post-request middle ware function. **Affect all instances**.
+  > You can do something like pre-process for data.
+
+    ```js
+    // user.api.js
+    export default {
+        list: {
+            name: 'user list',
+            method: 'get',
+            preProcessor(users) {
+                return users.map(user => {
+                    user.age++;
+                    return user;
+                });
+            }
+        }
+    }
+    ```
+
+    ```js
+    import ApiModule from "@calvin_von/axios-api-module";
+
+    ApiModule.globalPostRequestMiddleWare((apiMeta, res, next) => {
+        const { preProcessor } = apiMeta;
+        
+        if (preProcessor) {
+            next(preProcessor(res));
+        }
+        else {
+            next(res);
+        }
+    });
+    ```
+
 ### `globalFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`
   
   > NOTE: If no fallbackMiddleware registered, a `defaultErrorHandler` will be used
@@ -310,6 +363,9 @@ Whether enable modular namespaces
 
 ## Instance Method
 ### `registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`
+- description: Same as static method.But **only affect single instance**.
+
+### `registerPostRequestMiddleWare(postRequestHook: (apiMeta, res, next) => null)`
 - description: Same as static method.But **only affect single instance**.
 
 ### `registerFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`
