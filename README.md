@@ -12,6 +12,7 @@ Encapsulated api module based on axios. [Live demo](https://stackblitz.com/edit/
 - [Getting Started](#Getting-Started)
     - [Install](#Install)
     - [Typical Usage](#Typical-Usage)
+    - [Send Requests](#Send-Requests)
     - [Intercepter](#Intercepter)
 - [Options](#Options)
     - [`baseConfig` option](#`baseConfig`-option)
@@ -98,6 +99,21 @@ const apis = apiMod.getInstance();
 
 apis.$module === apiMod;    // true
 
+...
+```
+
+### Send Requests
+You need to call the method like this: **Request({ query: {...}, body: {...}, params: {...} }, opt?)** to send request.
+
+- **query**: The URL parameters to be sent with the request, must be a plain object or an URLSearchParams object. [axios params option](https://github.com/axios/axios#request-config)
+
+- **params**: Support dynamic url params(usage likes [vue-router dynamic matching](https://router.vuejs.org/guide/essentials/dynamic-matching.html))
+
+- **body**: The data to be sent as the request body. [axios data option](https://github.com/axios/axios#request-config)
+
+- **opt**: More original request configs available. [Request Config](https://github.com/axios/axios#request-config)
+
+```js
 // request
 const config = { /* Axios Request Config */ };
 
@@ -122,9 +138,7 @@ axios.get(`/api/user/${this.uid}/info`, {
         ts: Date.now()
     }
 });
-...
 ```
-
 ### Intercepter
 Register axios intercepter for **only single instance**
 
