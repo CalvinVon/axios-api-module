@@ -151,7 +151,7 @@ export default class ApiModule {
 
     /**
      * fore-request middleware
-     * @param {ApiMeta} apiMeta api meta data
+     * @param {ApiMeta} apiMeta api metadata
      * @param {Object} data request data
      * @param {Query/Body} next(err) call for next step
      */
@@ -167,7 +167,7 @@ export default class ApiModule {
 
     /**
      * post-request middleware
-     * @param {ApiMeta} apiMeta api meta data
+     * @param {ApiMeta} apiMeta api metadata
      * @param {Object} res response data
      * @param {Query/Body} next(err) call for next step
      */
@@ -183,7 +183,7 @@ export default class ApiModule {
 
     /**
      * fallback middleWare
-     * @param {ApiMeta} apiMeta api meta data
+     * @param {ApiMeta} apiMeta api metadata
      * @param {Error} error
      * @param {Function} next(err) call for next step
      */
@@ -225,29 +225,29 @@ export default class ApiModule {
 
     // map api meta to to request
     _ProxyApi(target, key) {
-        if (Object.prototype.toString.call(target[key]) !== '[object Object]') {
-            throw new TypeError(`Api meta [${key}] is not an object`);
+        const metaData = target[key];
+        if (Object.prototype.toString.call(metaData) !== '[object Object]') {
+            throw new TypeError(`Api metadata [${key}] is not an object`);
         }
 
         const {
             method,
             url,
-        } = target[key];
+        } = metaData;
 
         if (!method || !url) {
-            console.log(`[ApiModule] Check your api meta for [${key}]: `, target[key]);
-            throw new Error(`[ApiModule] Api meta [${key}]: 'method' or 'url' value not found`);
+            console.log(`[ApiModule] Check your api metadata for [${key}]: `, metaData);
+            throw new Error(`[ApiModule] Api metadata [${key}]: 'method' or 'url' value not found`);
         }
 
         let parsedUrl = url;
 
-        return (data, opt = {}) => {
+        const request = (data, opt = {}) => {
             return new Promise((resolve, reject) => {
-                const apiMeta = target[key];
                 // fore request task
-                this.foreRequestMiddleWare(apiMeta, data, err => {
+                this.foreRequestMiddleWare(metaData, data, err => {
                     if (err) {
-                        this.fallbackMiddleWare(apiMeta, { data, error: err }, reject)
+                        this.fallbackMiddleWare(metaData, { data, error: err }, reject)
                     }
                     else {
 
@@ -277,14 +277,17 @@ export default class ApiModule {
 
                         this.options.axios(config)
                             .then(res => {
-                                this.postRequestMiddleWare(apiMeta, res, resolve);
+                                this.postRequestMiddleWare(metaData, res, resolve);
                             })
                             .catch(err => {
-                                this.fallbackMiddleWare(apiMeta, { data, error: err }, reject)
+                                this.fallbackMiddleWare(metaData, { data, error: err }, reject)
                             });
                     }
                 })
             })
         };
+
+        request.meta = metaData;
+        return request;
     }
 }

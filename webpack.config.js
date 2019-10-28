@@ -1,4 +1,5 @@
 const path = require('path')
+const webpack = require('webpack');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 
 module.exports = {
@@ -22,6 +23,9 @@ module.exports = {
         }]
     },
     plugins: [
+        new webpack.BannerPlugin({
+            banner: `axios-api-module.js v${require('./package.json').version}\n(c) ${new Date().getFullYear()} Calvin Von\nReleased under the MIT License.`
+        }),
         new UglifyJsPlugin({
             uglifyOptions: {
                 compress: {

@@ -114,23 +114,30 @@ You need to call the method like this: **Request({ query: {...}, body: {...}, pa
 - **opt**: More original request configs available. [Request Config](https://github.com/axios/axios#request-config)
 
 ```js
-// request
+// axios origin request options
 const config = { /* Axios Request Config */ };
+const request = apis.user.getInfo;
 
-apis.user.getInfo({
-    params: {
-        uid: this.uid
+// get metadata
+console.log(request.meta);
+
+// send request
+request(
+    {
+        params: {
+            uid: this.uid
+        },
+        query: {
+            ts: Date.now()
+        }
     },
-    query: {
-        ts: Date.now()
-    }
-}, config)
-    .then(function() {
+    config
+).then(function() {
 
-    })
-    .catch(function(err) {
+})
+.catch(function(err) {
 
-    })
+})
 
 // is equal to
 axios.get(`/api/user/${this.uid}/info`, {

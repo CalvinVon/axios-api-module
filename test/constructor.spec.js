@@ -93,9 +93,9 @@ describe('baseConfig', () => {
             });
         };
 
-        expect(produceEmptyMeta).to.throw(Error, /Api meta \[(\w+)\]: 'method' or 'url' value not found/);
-        expect(produceNullMeta).to.throw(TypeError, /Api meta \[(\w+)\] is not an object/);
-        expect(produceUndefinedMeta).to.throw(TypeError, /Api meta \[(\w+)\] is not an object/);
+        expect(produceEmptyMeta).to.throw(Error, /Api metadata \[(\w+)\]: 'method' or 'url' value not found/);
+        expect(produceNullMeta).to.throw(TypeError, /Api metadata \[(\w+)\] is not an object/);
+        expect(produceUndefinedMeta).to.throw(TypeError, /Api metadata \[(\w+)\] is not an object/);
     });
 
 });

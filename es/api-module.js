@@ -161,7 +161,7 @@ function () {
     }
     /**
      * fore-request middleware
-     * @param {ApiMeta} apiMeta api meta data
+     * @param {ApiMeta} apiMeta api metadata
      * @param {Object} data request data
      * @param {Query/Body} next(err) call for next step
      */
@@ -180,7 +180,7 @@ function () {
     }
     /**
      * post-request middleware
-     * @param {ApiMeta} apiMeta api meta data
+     * @param {ApiMeta} apiMeta api metadata
      * @param {Object} res response data
      * @param {Query/Body} next(err) call for next step
      */
@@ -199,7 +199,7 @@ function () {
     }
     /**
      * fallback middleWare
-     * @param {ApiMeta} apiMeta api meta data
+     * @param {ApiMeta} apiMeta api metadata
      * @param {Error} error
      * @param {Function} next(err) call for next step
      */
@@ -251,28 +251,29 @@ function () {
     value: function _ProxyApi(target, key) {
       var _this3 = this;
 
-      if (Object.prototype.toString.call(target[key]) !== '[object Object]') {
-        throw new TypeError("Api meta [".concat(key, "] is not an object"));
+      var metaData = target[key];
+
+      if (Object.prototype.toString.call(metaData) !== '[object Object]') {
+        throw new TypeError("Api metadata [".concat(key, "] is not an object"));
       }
 
-      var _target$key = target[key],
-          method = _target$key.method,
-          url = _target$key.url;
+      var method = metaData.method,
+          url = metaData.url;
 
       if (!method || !url) {
-        console.log("[ApiModule] Check your api meta for [".concat(key, "]: "), target[key]);
-        throw new Error("[ApiModule] Api meta [".concat(key, "]: 'method' or 'url' value not found"));
+        console.log("[ApiModule] Check your api metadata for [".concat(key, "]: "), metaData);
+        throw new Error("[ApiModule] Api metadata [".concat(key, "]: 'method' or 'url' value not found"));
       }
 
       var parsedUrl = url;
-      return function (data) {
+
+      var request = function request(data) {
         var opt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         return new Promise(function (resolve, reject) {
-          var apiMeta = target[key]; // fore request task
-
-          _this3.foreRequestMiddleWare(apiMeta, data, function (err) {
+          // fore request task
+          _this3.foreRequestMiddleWare(metaData, data, function (err) {
             if (err) {
-              _this3.fallbackMiddleWare(apiMeta, {
+              _this3.fallbackMiddleWare(metaData, {
                 data: data,
                 error: err
               }, reject);
@@ -298,9 +299,9 @@ function () {
               }, opt);
 
               _this3.options.axios(config).then(function (res) {
-                _this3.postRequestMiddleWare(apiMeta, res, resolve);
+                _this3.postRequestMiddleWare(metaData, res, resolve);
               }).catch(function (err) {
-                _this3.fallbackMiddleWare(apiMeta, {
+                _this3.fallbackMiddleWare(metaData, {
                   data: data,
                   error: err
                 }, reject);
@@ -309,6 +310,9 @@ function () {
           });
         });
       };
+
+      request.meta = metaData;
+      return request;
     }
   }], [{
     key: "globalForeRequestMiddleWare",

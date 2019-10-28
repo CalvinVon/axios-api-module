@@ -51,7 +51,9 @@ apiModuleA.registerFallbackMiddleWare((apiMeta, error, next) => {
 
 // console.log(apiModule)
 // console.log(apiModuleA.getInstance())
-console.log(apiModuleA.getInstance().A.aaa({ query: { key: 123 } }))
+// console.log(apiModuleA.getInstance().A.aaa({ query: { key: 123 } }))
 
-// console.log(apiModuleB.getInstance())
-console.log(apiModuleB.getInstance().B.bbb({ body: { key: 123 } }))
+// // console.log(apiModuleB.getInstance())
+// console.log(apiModuleB.getInstance().B.bbb({ body: { key: 123 } }))
+
+console.log(apiModuleA.getInstance().A.aaa.meta)

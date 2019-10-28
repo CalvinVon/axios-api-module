@@ -1,3 +1,8 @@
+
+# v1.6.0 [(2019-10-28)](https://github.com/CalvinVon/axios-api-module/compare/v1.6.0...v1.5.2)
+### Features
+- exports origin meta data by adding [meta property](./README.md##Send-Requests) to request.
+
 ## v1.5.2 [(2019-10-3)](https://github.com/CalvinVon/axios-api-module/compare/v1.5.1...v1.5.2)
 - update dependencies and fix other potential security vulnerabilities
 
