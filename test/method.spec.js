@@ -191,28 +191,28 @@ describe('postRequestMiddleWare methods', () => {
     });
 
     it('static method globalPostRequestMiddleWare', () => {
-        ApiModule.globalPostRequestMiddleWare((apiMeta, res, next) => {
+        ApiModule.globalPostRequestMiddleWare((apiMeta, { response }, next) => {
             expect(apiMeta).to.be.eq(testApiMeta);
-            next(res);
+            next(response);
         });
 
         return apiMapper.test(testData).should.eventually.deep.eq(testData.body);
     });
 
     it('instance method registerPostRequestMiddleWare', () => {
-        apiModule.registerPostRequestMiddleWare((apiMeta, res, next) => {
+        apiModule.registerPostRequestMiddleWare((apiMeta, { response }, next) => {
             expect(apiMeta).to.be.eq(testApiMeta);
-            next(res);
+            next(response);
         });
 
         return apiMapper.test(testData).should.eventually.deep.eq(testData.body);
     });
 
     it('instance method would override static method', () => {
-        apiModule.registerPostRequestMiddleWare((apiMeta, res, next) => {
-            next(res);
+        apiModule.registerPostRequestMiddleWare((apiMeta, { response }, next) => {
+            next(response);
         });
-        ApiModule.globalPostRequestMiddleWare((apiMeta, res, next) => {
+        ApiModule.globalPostRequestMiddleWare((apiMeta, responseWrapper, next) => {
             next();
         });
         return apiMapper.test(testData).should.eventually.deep.eq(testData.body);

@@ -299,7 +299,10 @@ function () {
               }, opt);
 
               _this3.options.axios(config).then(function (res) {
-                _this3.postRequestMiddleWare(metaData, res, resolve);
+                _this3.postRequestMiddleWare(metaData, {
+                  data: data,
+                  response: res
+                }, resolve);
               }).catch(function (err) {
                 _this3.fallbackMiddleWare(metaData, {
                   data: data,

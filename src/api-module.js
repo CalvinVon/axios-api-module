@@ -277,7 +277,7 @@ export default class ApiModule {
 
                         this.options.axios(config)
                             .then(res => {
-                                this.postRequestMiddleWare(metaData, res, resolve);
+                                this.postRequestMiddleWare(metaData, { data, response: res }, resolve);
                             })
                             .catch(err => {
                                 this.fallbackMiddleWare(metaData, { data, error: err }, reject)
