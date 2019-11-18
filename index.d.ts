@@ -9,19 +9,19 @@ export interface ApiModuleConfig {
 
 export type ForeRequestHook = (
     apiMeta: ApiMeta,
-    data: Object | {},
+    data: Object | undefined,
     next: (error?: Error) => null
 ) => void;
 
 export type PostRequestHook = (
     apiMeta: ApiMeta,
-    res: Object | {},
-    next: (res: Object) => null
+    data: { response: Object, data: Object | undefined },
+    next: (response: Object) => null
 ) => void;
 
 export type FallbackHook = (
     apiMeta: ApiMeta,
-    data: { error: Error, data: Object },
+    data: { error: Error, data: Object | undefined },
     next: (error?: Error) => null
 ) => void;
 

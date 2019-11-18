@@ -5,7 +5,7 @@ const defaultForeRequestHook = () => {
 };
 
 const defaultPostRequestHook = () => {
-    return (_, res, next) => next(res);
+    return (_, { response }, next) => next(response);
 };
 
 const defaultFallbackHook = () => {
@@ -158,7 +158,7 @@ export default class ApiModule {
     foreRequestMiddleWare(apiMeta, data, next) {
         const hookFunction = this.foreRequestHook || ApiModule.foreRequestHook || defaultForeRequestHook();
         if (typeof hookFunction === 'function') {
-            hookFunction(apiMeta, data, next);
+            hookFunction.call(this, apiMeta, data, next);
         } else {
             console.warn(`[ApiModule] foreRequestMiddleWare: ${hookFunction} is not a valid foreRequestHook function`);
             next();
@@ -168,27 +168,27 @@ export default class ApiModule {
     /**
      * post-request middleware
      * @param {ApiMeta} apiMeta api metadata
-     * @param {Object} res response data
+     * @param {Object} resWrapper contains `response` data and `data` fields
      * @param {Query/Body} next(err) call for next step
      */
-    postRequestMiddleWare(apiMeta, res, next) {
+    postRequestMiddleWare(apiMeta, resWrapper, next) {
         const hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultPostRequestHook();
         if (typeof hookFunction === 'function') {
-            hookFunction(apiMeta, res, next);
+            hookFunction.call(this, apiMeta, resWrapper, next);
         } else {
             console.warn(`[ApiModule] postRequestMiddleWare: ${hookFunction} is not a valid foreRequestHook function`);
-            next(res);
+            next(resWrapper.response);
         }
     }
 
     /**
      * fallback middleWare
      * @param {ApiMeta} apiMeta api metadata
-     * @param {Error} error
+     * @param {Object} errorWrapper contains `error` data and `data` fields
      * @param {Function} next(err) call for next step
      */
-    fallbackMiddleWare(apiMeta, data, next) {
-        const error = data.error;
+    fallbackMiddleWare(apiMeta, errorWrapper, next) {
+        const error = errorWrapper.error;
         const hookFunction = this.fallbackHook || ApiModule.fallbackHook || defaultFallbackHook();
         const defaultErrorHandler = () => {
             if (this.options.console) {
@@ -205,7 +205,7 @@ export default class ApiModule {
         }
 
         if (typeof hookFunction === 'function') {
-            hookFunction(apiMeta, data, next);
+            hookFunction.call(this, apiMeta, errorWrapper, next);
         } else {
             console.warn(`[ApiModule] fallbackMiddleWare: ${hookFunction} is not a valid fallbackHook function`);
             defaultErrorHandler();

@@ -10,14 +10,15 @@ var defaultForeRequestHook = function defaultForeRequestHook() {
 };
 
 var defaultPostRequestHook = function defaultPostRequestHook() {
-  return function (_, res, next) {
-    return next(res);
+  return function (_, _ref, next) {
+    var response = _ref.response;
+    return next(response);
   };
 };
 
 var defaultFallbackHook = function defaultFallbackHook() {
-  return function (_, _ref, next) {
-    var error = _ref.error;
+  return function (_, _ref2, next) {
+    var error = _ref2.error;
     return next(error);
   };
 };
@@ -172,7 +173,7 @@ function () {
       var hookFunction = this.foreRequestHook || ApiModule.foreRequestHook || defaultForeRequestHook();
 
       if (typeof hookFunction === 'function') {
-        hookFunction(apiMeta, data, next);
+        hookFunction.call(this, apiMeta, data, next);
       } else {
         console.warn("[ApiModule] foreRequestMiddleWare: ".concat(hookFunction, " is not a valid foreRequestHook function"));
         next();
@@ -181,35 +182,35 @@ function () {
     /**
      * post-request middleware
      * @param {ApiMeta} apiMeta api metadata
-     * @param {Object} res response data
+     * @param {Object} resWrapper contains `response` data and `data` fields
      * @param {Query/Body} next(err) call for next step
      */
 
   }, {
     key: "postRequestMiddleWare",
-    value: function postRequestMiddleWare(apiMeta, res, next) {
+    value: function postRequestMiddleWare(apiMeta, resWrapper, next) {
       var hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultPostRequestHook();
 
       if (typeof hookFunction === 'function') {
-        hookFunction(apiMeta, res, next);
+        hookFunction.call(this, apiMeta, resWrapper, next);
       } else {
         console.warn("[ApiModule] postRequestMiddleWare: ".concat(hookFunction, " is not a valid foreRequestHook function"));
-        next(res);
+        next(resWrapper.response);
       }
     }
     /**
      * fallback middleWare
      * @param {ApiMeta} apiMeta api metadata
-     * @param {Error} error
+     * @param {Object} errorWrapper contains `error` data and `data` fields
      * @param {Function} next(err) call for next step
      */
 
   }, {
     key: "fallbackMiddleWare",
-    value: function fallbackMiddleWare(apiMeta, data, next) {
+    value: function fallbackMiddleWare(apiMeta, errorWrapper, next) {
       var _this2 = this;
 
-      var error = data.error;
+      var error = errorWrapper.error;
       var hookFunction = this.fallbackHook || ApiModule.fallbackHook || defaultFallbackHook();
 
       var defaultErrorHandler = function defaultErrorHandler() {
@@ -225,7 +226,7 @@ function () {
       };
 
       if (typeof hookFunction === 'function') {
-        hookFunction(apiMeta, data, next);
+        hookFunction.call(this, apiMeta, errorWrapper, next);
       } else {
         console.warn("[ApiModule] fallbackMiddleWare: ".concat(hookFunction, " is not a valid fallbackHook function"));
         defaultErrorHandler();
@@ -278,13 +279,13 @@ function () {
                 error: err
               }, reject);
             } else {
-              var _ref2 = data || {},
-                  _ref2$query = _ref2.query,
-                  query = _ref2$query === void 0 ? {} : _ref2$query,
-                  _ref2$params = _ref2.params,
-                  params = _ref2$params === void 0 ? {} : _ref2$params,
-                  _ref2$body = _ref2.body,
-                  body = _ref2$body === void 0 ? {} : _ref2$body; // parse url
+              var _ref3 = data || {},
+                  _ref3$query = _ref3.query,
+                  query = _ref3$query === void 0 ? {} : _ref3$query,
+                  _ref3$params = _ref3.params,
+                  params = _ref3$params === void 0 ? {} : _ref3$params,
+                  _ref3$body = _ref3.body,
+                  body = _ref3$body === void 0 ? {} : _ref3$body; // parse url
               // handle api like /a/:id/b/{param}
 
 

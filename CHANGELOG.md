@@ -1,3 +1,29 @@
+# [2.0.0](https://github.com/CalvinVon/axios-api-module/compare/v1.6.0...v2.0.0) (2019-11-18)
+
+### BREAKING CHANGES
+
+* **postRequestMiddleWare:** `postRequestMiddleWare` parameters has changed.
+
+    To migrate the code follow the example below:
+
+    Before:
+
+    ```js
+    apiMod.registerPostRequestMiddleWare(apiMetas, res, next) {
+        next(res);
+    }
+    ```
+
+    After:
+
+    ```js
+    apiMod.registerPostRequestMiddleWare(apiMetas, { data, response }, next) {
+        console.log(data);
+        next(response);
+    }
+    ```
+
+
 
 # v1.6.0 [(2019-10-28)](https://github.com/CalvinVon/axios-api-module/compare/v1.6.0...v1.5.2)
 ### Features
