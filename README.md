@@ -20,12 +20,12 @@ Encapsulated api module based on axios. [Live demo](https://stackblitz.com/edit/
 - [Methods](#Methods)
     - [Static Method](#Static-Method)
         - [`globalForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#globalforerequestmiddlewareforerequesthook-apimeta-data-next--null)
-        - [`globalPostRequestMiddleWare(postRequestHook: (apiMeta, res, next) => null)`](#globalpostrequestmiddlewarepostrequesthook-apimeta-res-next--null)
-        - [`globalFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`](#globalfallbackmiddlewarefallbackhook-apimeta-data-next--null)
+        - [`globalPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`](#globalpostrequestmiddlewarepostrequesthook-apimeta-resWrapper-next--null)
+        - [`globalFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`](#globalfallbackmiddlewarefallbackhook-apimeta-errorWrapper-next--null)
     - [Instance Method](#Instance-Method)
         - [`registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerforerequestmiddlewareforerequesthook-apimeta-data-next--null)
-        - [`registerPostRequestMiddleWare(postRequestHook: (apiMeta, res, next) => null)`](#registerpostrequestmiddlewarepostrequesthook-apimeta-res-next--null)
-        - [`registerFallbackMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerfallbackmiddlewarefallbackhook-apimeta-data-next--null)
+        - [`registerPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`](#registerpostrequestmiddlewarepostrequesthook-apimeta-resWrapper-next--null)
+        - [`registerFallbackMiddleWare(foreRequestHook: (apiMeta, errorWrapper, next) => null)`](#registerfallbackmiddlewarefallbackhook-apimeta-errorWrapper-next--null)
         - [`getInstance()`](#getInstance)
         - [`getAxios()`](#getAxios)
         - [`generateCancellationSource()`](#generateCancellationSource)
@@ -303,17 +303,19 @@ Whether enable modular namespaces
     });
     ```
 
-### `globalPostRequestMiddleWare(postRequestHook: (apiMeta, res, next) => null)`
+### `globalPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`
 
 - params:
     - `apiMeta`: `apiMetas` option single meta info you passed in.
-    - `res`: response data from server.
+    - `resWrapper`: an object includes `response` and `data` fields.
+        - `response`: response data from server.
+        - `data`: origin data passed in.
     - `next(res)` call `next` function to go next step. A `res` parameter should be passed in.
   
 - description:
 
   Register post-request middle ware function. **Affect all instances**.
-  > You can do something like pre-process for data.
+  > You can do something like a pre-process for data.
 
     ```js
     // user.api.js
@@ -334,27 +336,27 @@ Whether enable modular namespaces
     ```js
     import ApiModule from "@calvin_von/axios-api-module";
 
-    ApiModule.globalPostRequestMiddleWare((apiMeta, res, next) => {
+    ApiModule.globalPostRequestMiddleWare((apiMeta, { data, response }, next) => {
         const { preProcessor } = apiMeta;
         
         if (preProcessor) {
-            next(preProcessor(res));
+            next(preProcessor(response));
         }
         else {
-            next(res);
+            next(response);
         }
     });
     ```
 
-### `globalFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`
+### `globalFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`
   
-  > NOTE: If no fallbackMiddleware registered, a `defaultErrorHandler` will be used
+  > NOTE: If there's no fallback middleware registered, a **default error handler** will be replaced with.
 
 - params:
     - `apiMeta`: `apiMetas` option single meta info you passed in
-    - `data`
-        - `data`: origin data passed
-        - `error`: `Error` instance
+    - `errorWrapper`
+        - `data`: origin data passed in.
+        - `error`: `Error` instance.
     - `next(error)` call `next` function to go next step
 
 - description:
@@ -386,10 +388,10 @@ Whether enable modular namespaces
 ### `registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`
 - description: Same as static method.But **only affect single instance**.
 
-### `registerPostRequestMiddleWare(postRequestHook: (apiMeta, res, next) => null)`
+### `registerPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`
 - description: Same as static method.But **only affect single instance**.
 
-### `registerFallbackMiddleWare(fallbackHook: (apiMeta, data, next) => null)`
+### `registerFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`
 - description: Same as static method.But **only affect single instance**.
 
 ### `getInstance()`
