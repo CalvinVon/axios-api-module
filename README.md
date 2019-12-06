@@ -56,7 +56,6 @@ or via CDN
 
 ```js
 // You can import axios to set the interceptor
-// NOTE: axios is already a part of the dependency, you don't need to install again.
 import axios from 'axios';
 
 import ApiModule from "@calvin_von/axios-api-module";
