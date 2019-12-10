@@ -36,11 +36,11 @@ Encapsulated api module based on axios. [Live demo](https://stackblitz.com/edit/
 ### Install
 You can install the library via npm.
 ```bash
-npm i @calvin_von/axios-api-module -S
+npm i axios @calvin_von/axios-api-module -S
 ```
 or via yarn:
 ```bash
-yarn add @calvin_von/axios-api-module
+yarn add axios @calvin_von/axios-api-module
 ```
 
 or via CDN
@@ -55,7 +55,7 @@ or via CDN
 ### Typical Usage
 
 ```js
-// You can import axios to set the interceptor
+// You should import axios at first
 import axios from 'axios';
 
 import ApiModule from "@calvin_von/axios-api-module";
