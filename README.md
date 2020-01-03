@@ -140,7 +140,7 @@ request(
 
 // is equal to
 axios.get(`/api/user/${this.uid}/info`, {
-    params: {
+    query: {
         ts: Date.now()
     }
 });
