@@ -19,11 +19,11 @@ Encapsulated api module based on axios. [Live demo](https://stackblitz.com/edit/
     - [`module` option](#`module`-option)
 - [Methods](#Methods)
     - [Static Method](#Static-Method)
-        - [`globalForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#globalforerequestmiddlewareforerequesthook-apimeta-data-next--null)
+        - [`globalBefore(foreRequestHook: (apiMeta, data, next) => null)`](#globalBeforeforerequesthook-apimeta-data-next--null)
         - [`globalPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`](#globalpostrequestmiddlewarepostrequesthook-apimeta-resWrapper-next--null)
         - [`globalFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`](#globalfallbackmiddlewarefallbackhook-apimeta-errorWrapper-next--null)
     - [Instance Method](#Instance-Method)
-        - [`registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`](#registerforerequestmiddlewareforerequesthook-apimeta-data-next--null)
+        - [`useBefore(foreRequestHook: (apiMeta, data, next) => null)`](#useBeforeforerequesthook-apimeta-data-next--null)
         - [`registerPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`](#registerpostrequestmiddlewarepostrequesthook-apimeta-resWrapper-next--null)
         - [`registerFallbackMiddleWare(foreRequestHook: (apiMeta, errorWrapper, next) => null)`](#registerfallbackmiddlewarefallbackhook-apimeta-errorWrapper-next--null)
         - [`getInstance()`](#getInstance)
@@ -257,7 +257,7 @@ Whether enable modular namespaces
 
 # Methods
 ## Static Method
-### `globalForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`
+### `globalBefore(foreRequestHook: (apiMeta, data, next) => null)`
 
 - params:
     - `apiMeta`: `apiMetas` option single meta info you passed in
@@ -277,7 +277,7 @@ Whether enable modular namespaces
     import ApiModule from "@calvin_von/axios-api-module";
 
     // For all instances
-    ApiModule.globalForeRequestMiddleWare((apiMeta, data, next) => {
+    ApiModule.globalBefore((apiMeta, data, next) => {
         const { name, method, url /* , or other custom fields */, schema } = apiMeta;
         
         if (schema) {
@@ -295,7 +295,7 @@ Whether enable modular namespaces
 
     const backendApi = new ApiModule({ /*...*/ });
     // Just for `backendApi`
-    backendApi.registerForeRequestMiddleWare((apiMeta, data, next) => {
+    backendApi.useBefore((apiMeta, data, next) => {
         console.log(apiMeta)
         console.log(data)
         next();
@@ -384,7 +384,7 @@ Whether enable modular namespaces
     ```
 
 ## Instance Method
-### `registerForeRequestMiddleWare(foreRequestHook: (apiMeta, data, next) => null)`
+### `useBefore(foreRequestHook: (apiMeta, data, next) => null)`
 - description: Same as static method.But **only affect single instance**.
 
 ### `registerPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`

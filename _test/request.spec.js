@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import ApiModule from '../src';
-import utils from './utils';
+import utils from '../test/utils';
 
 chai.use(chaiAsPromised);
 chai.should();

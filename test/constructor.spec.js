@@ -16,7 +16,7 @@ describe('baseConfig', () => {
             },
             console: false,
             module: false,
-            apiMetas: {}
+            metadatas: {}
         };
         const apiModule = new ApiModule(config);
         expect(apiModule.options).to.be.contain(config);
@@ -32,7 +32,7 @@ describe('baseConfig', () => {
     it('no modular namespace api metas', () => {
         const apiModule = new ApiModule({
             module: false,
-            apiMetas: {
+            metadatas: {
                 test: {
                     url: '/api/test',
                     method: 'get'
@@ -47,7 +47,7 @@ describe('baseConfig', () => {
     it('multiple modular namespaces api metas', () => {
         const apiModule = new ApiModule({
             module: true,
-            apiMetas: {
+            metadatas: {
                 main: {
                     test: {
                         url: '/api/test',
@@ -67,11 +67,11 @@ describe('baseConfig', () => {
         expect(apiMapper).to.have.all.keys('main', 'sub').but.not.have.all.keys('test', 'subTest');
     });
 
-    it('apiMetas passing empty meta value should throw error', () => {
+    it('metadatas passing empty meta value should throw error', () => {
         const produceEmptyMeta = () => {
             new ApiModule({
                 module: false,
-                apiMetas: {
+                metadatas: {
                     test: {},
                 }
             });
@@ -79,7 +79,7 @@ describe('baseConfig', () => {
         const produceNullMeta = () => {
             new ApiModule({
                 module: false,
-                apiMetas: {
+                metadatas: {
                     other: null,
                 }
             });
@@ -87,7 +87,7 @@ describe('baseConfig', () => {
         const produceUndefinedMeta = () => {
             new ApiModule({
                 module: false,
-                apiMetas: {
+                metadatas: {
                     another: undefined
                 }
             });
@@ -96,6 +96,14 @@ describe('baseConfig', () => {
         expect(produceEmptyMeta).to.throw(Error, /Api metadata \[(\w+)\]: 'method' or 'url' value not found/);
         expect(produceNullMeta).to.throw(TypeError, /Api metadata \[(\w+)\] is not an object/);
         expect(produceUndefinedMeta).to.throw(TypeError, /Api metadata \[(\w+)\] is not an object/);
+    });
+
+    it('one instance will return same instance of axios', () => {
+        const apiModule = new ApiModule({
+            api: {}
+        });
+
+        expect(apiModule.getAxios()).to.be.equal(apiModule.getAxios());
     });
 
 });

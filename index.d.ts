@@ -64,11 +64,11 @@ declare class ApiModule {
     constructor(config: ApiModuleConfig);
 
     options: ApiModuleOptions;
-    static globalForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
+    static globalBefore(foreRequestHook: ForeRequestHook): void;
     static globalPostRequestMiddleWare(postRequestHook: PostRequestHook): void;
     static globalFallbackMiddleWare(fallbackHook: FallbackHook): void;
 
-    registerForeRequestMiddleWare(foreRequestHook: ForeRequestHook): void;
+    useBefore(foreRequestHook: ForeRequestHook): void;
     registerPostRequestMiddleWare(postRequestHook: PostRequestHook): void;
     registerFallbackMiddleWare(fallbackHook: FallbackHook): void;
 

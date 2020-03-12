@@ -32,7 +32,7 @@ var defaultFallbackHook = function defaultFallbackHook() {
  * @member {Function} foreRequestHook
  * @member {Function} fallbackHook
  * 
- * @method registerForeRequestMiddleWare(hook)
+ * @method useBefore(hook)
  * @method registerFallbackMiddleWare(hook)
  * @method getAxios()
  * @method getInstance(hook)
@@ -100,13 +100,13 @@ function () {
 
 
   _createClass(ApiModule, [{
-    key: "registerForeRequestMiddleWare",
+    key: "useBefore",
 
     /**
      * Registe Fore-Request MiddleWare
      * @param {Function} foreRequestHook(apiMeta, data = {}, next)
      */
-    value: function registerForeRequestMiddleWare() {
+    value: function useBefore() {
       var foreRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultForeRequestHook();
       this.foreRequestHook = foreRequestHook;
     }
@@ -319,8 +319,8 @@ function () {
       return request;
     }
   }], [{
-    key: "globalForeRequestMiddleWare",
-    value: function globalForeRequestMiddleWare() {
+    key: "globalBefore",
+    value: function globalBefore() {
       var foreRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultForeRequestHook();
       ApiModule.foreRequestHook = foreRequestHook;
     }

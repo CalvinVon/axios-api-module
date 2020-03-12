@@ -32,12 +32,12 @@ const apiModuleB = new ApiModule({
     module: true
 });
 
-ApiModule.globalForeRequestMiddleWare((apiMeta, data, next) => {
+ApiModule.globalBefore((apiMeta, data, next) => {
     console.log(apiMeta.url);
     next();
 })
 
-apiModuleA.registerForeRequestMiddleWare((apiMeta, data, next) => {
+apiModuleA.useBefore((apiMeta, data, next) => {
     console.log(apiMeta)
     console.log(data)
     next();

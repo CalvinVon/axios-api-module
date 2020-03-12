@@ -1,16 +1,7 @@
 import axios from 'axios';
+import Context from './context';
 
-const defaultForeRequestHook = () => {
-    return (_, __, next) => next();
-};
-
-const defaultPostRequestHook = () => {
-    return (_, { response }, next) => next(response);
-};
-
-const defaultFallbackHook = () => {
-    return (_, { error }, next) => next(error);
-};
+const defaultMiddleware = (context, next) => next(context.responseError);
 
 /**
  * Api Module class
@@ -22,10 +13,11 @@ const defaultFallbackHook = () => {
  * @member {Function} foreRequestHook
  * @member {Function} fallbackHook
  * 
- * @method registerForeRequestMiddleWare(hook)
- * @method registerFallbackMiddleWare(hook)
+ * @method useBefore(hook)
+ * @method useAfter(hook)
+ * @method useCatch(hook)
  * @method getAxios()
- * @method getInstance(hook)
+ * @method getInstance()
  * @method generateCancellationSource() get axios cancellation source for cancel api
  */
 export default class ApiModule {
@@ -35,6 +27,7 @@ export default class ApiModule {
     static fallbackHook;
 
     options = {};
+    apiMapper;
     foreRequestHook;
     postRequestHook;
     fallbackHook;
@@ -42,25 +35,26 @@ export default class ApiModule {
 
     constructor(config = {}) {
         const {
-            apiMetas = {},
-            module: modularNsp = true,
+            metadatas = {},
+            module: modularNsp,
             console: useConsole = true,
             baseConfig = {},
         } = config;
 
-        let API_ = {};
+        this.apiMapper = {};
 
         if (modularNsp) {
             // moduled namespace
-            Object.keys(apiMetas).forEach(apiName => {
-                API_[apiName] = this._Proxyable(apiMetas[apiName]);
+            Object.keys(metadatas).forEach(apiName => {
+                this.apiMapper[apiName] = this._proxyable(metadatas[apiName]);
             });
-        } else {
+        }
+        else {
             // single module
-            API_ = this._Proxyable(apiMetas);
+            this.apiMapper = this._proxyable(metadatas);
         }
 
-        Object.defineProperty(API_, '$module', {
+        Object.defineProperty(this.apiMapper, '$module', {
             configurable: false,
             enumerable: false,
             writable: false,
@@ -69,8 +63,7 @@ export default class ApiModule {
 
         this.options = {
             axios: axios.create(baseConfig),
-            apiMetas,
-            apis: API_,
+            metadatas,
             module: modularNsp,
             console: useConsole,
             baseConfig
@@ -78,12 +71,11 @@ export default class ApiModule {
     }
 
 
-
     /**
      * Register Globally Fore-Request MiddleWare Globally (For All Instance)
      * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
      */
-    static globalForeRequestMiddleWare(foreRequestHook = defaultForeRequestHook()) {
+    static globalBefore(foreRequestHook = defaultMiddleware) {
         ApiModule.foreRequestHook = foreRequestHook;
     }
 
@@ -91,7 +83,7 @@ export default class ApiModule {
      * Register Globally Post-Request MiddleWare Globally (For All Instance)
      * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
      */
-    static globalPostRequestMiddleWare(postRequestHook = defaultPostRequestHook()) {
+    static globalAfter(postRequestHook = defaultMiddleware) {
         ApiModule.postRequestHook = postRequestHook;
     }
 
@@ -99,7 +91,7 @@ export default class ApiModule {
      * Register Globally ForeRequest MiddleWare Globally (For All Instance)
      * @param {Function} fallbackHook(apiMeta, data = {}, next) 
      */
-    static globalFallbackMiddleWare(fallbackHook = defaultFallbackHook()) {
+    static globalCatch(fallbackHook = defaultMiddleware) {
         ApiModule.fallbackHook = fallbackHook;
     }
 
@@ -107,7 +99,7 @@ export default class ApiModule {
      * Registe Fore-Request MiddleWare
      * @param {Function} foreRequestHook(apiMeta, data = {}, next)
      */
-    registerForeRequestMiddleWare(foreRequestHook = defaultForeRequestHook()) {
+    useBefore(foreRequestHook = defaultMiddleware) {
         this.foreRequestHook = foreRequestHook;
     }
 
@@ -115,7 +107,7 @@ export default class ApiModule {
      * Registe Post-Request MiddleWare
      * @param {Function} foreRequestHook(apiMeta, data = {}, next)
      */
-    registerPostRequestMiddleWare(postRequestHook = defaultPostRequestHook()) {
+    useAfter(postRequestHook = defaultMiddleware) {
         this.postRequestHook = postRequestHook;
     }
 
@@ -123,15 +115,8 @@ export default class ApiModule {
      * Registe Fallback MiddleWare
      * @param {Function} fallbackHook(apiMeta, data = {}, next)
      */
-    registerFallbackMiddleWare(fallbackHook = defaultFallbackHook()) {
+    useCatch(fallbackHook = defaultMiddleware) {
         this.fallbackHook = fallbackHook;
-    }
-
-    /**
-     * @returns {Axios} get instance of Axios
-     */
-    getAxios() {
-        return this.options.axios;
     }
 
     /**
@@ -142,24 +127,33 @@ export default class ApiModule {
         return axios.CancelToken.source();
     }
 
+
     /**
-     * @returns {Object} get instance of api mapper
+     * @returns {Axios} get instance of Axios
      */
-    getInstance() {
-        return this.options.apis;
+    getAxios() {
+        return this.options.axios;
     }
 
     /**
-     * fore-request middleware
-     * @param {ApiMeta} apiMeta api metadata
-     * @param {Object} data request data
-     * @param {Query/Body} next(err) call for next step
+     * @returns {Object} get instance of api metadata mapper
      */
-    foreRequestMiddleWare(apiMeta, data, next) {
-        const hookFunction = this.foreRequestHook || ApiModule.foreRequestHook || defaultForeRequestHook();
+    getInstance() {
+        return this.apiMapper;
+    }
+
+
+    /**
+     * fore-request middleware
+     * @param {Context} context
+     * @param {Function} next
+     */
+    foreRequestMiddleWare(context, next) {
+        const hookFunction = this.foreRequestHook || ApiModule.foreRequestHook || defaultMiddleware;
         if (typeof hookFunction === 'function') {
-            hookFunction.call(this, apiMeta, data, next);
-        } else {
+            hookFunction.call(this, context, next);
+        }
+        else {
             console.warn(`[ApiModule] foreRequestMiddleWare: ${hookFunction} is not a valid foreRequestHook function`);
             next();
         }
@@ -167,127 +161,125 @@ export default class ApiModule {
 
     /**
      * post-request middleware
-     * @param {ApiMeta} apiMeta api metadata
-     * @param {Object} resWrapper contains `response` data and `data` fields
-     * @param {Query/Body} next(err) call for next step
+     * @param {Context} context
+     * @param {Function} next
      */
-    postRequestMiddleWare(apiMeta, resWrapper, next) {
-        const hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultPostRequestHook();
+    postRequestMiddleWare(context, next) {
+        const hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultMiddleware;
         if (typeof hookFunction === 'function') {
-            hookFunction.call(this, apiMeta, resWrapper, next);
-        } else {
+            hookFunction.call(this, context, next);
+        }
+        else {
             console.warn(`[ApiModule] postRequestMiddleWare: ${hookFunction} is not a valid foreRequestHook function`);
-            next(resWrapper.response);
+            next();
         }
     }
 
     /**
      * fallback middleWare
-     * @param {ApiMeta} apiMeta api metadata
-     * @param {Object} errorWrapper contains `error` data and `data` fields
-     * @param {Function} next(err) call for next step
+     * @param {Context} context
+     * @param {Function} next
      */
-    fallbackMiddleWare(apiMeta, errorWrapper, next) {
-        const error = errorWrapper.error;
-        const hookFunction = this.fallbackHook || ApiModule.fallbackHook || defaultFallbackHook();
+    fallbackMiddleWare(context, next) {
+        const error = context.responseError;
+        const hookFunction = this.fallbackHook || ApiModule.fallbackHook || defaultMiddleware;
         const defaultErrorHandler = () => {
             if (this.options.console) {
                 const {
-                    name,
                     method,
                     url
                 } = apiMeta;
-                const msg = `[ApiModule] ${name} [${method.toUpperCase()}]: [${url}] failed with ${error.message}`;
+                const msg = `[ApiModule] [${method.toUpperCase()} ${url}] failed with ${error.message}`;
                 console.error(new Error(msg));
             }
 
-            next(error);
+            next();
         }
 
         if (typeof hookFunction === 'function') {
-            hookFunction.call(this, apiMeta, errorWrapper, next);
-        } else {
+            hookFunction.call(this, context, next);
+        }
+        else {
             console.warn(`[ApiModule] fallbackMiddleWare: ${hookFunction} is not a valid fallbackHook function`);
             defaultErrorHandler();
         }
     }
 
     // tranfer single module api meta info to request
-    _Proxyable(target) {
-        const target_ = {};
+    _proxyable(target) {
+        const _target = {};
         for (const key in target) {
             if (target.hasOwnProperty(key)) {
-                target_[key] = this._ProxyApi(target, key);
+                _target[key] = this._proxyApiMetadata(target, key);
             }
         }
-        return target_;
+        return _target;
     }
 
     // map api meta to to request
-    _ProxyApi(target, key) {
-        const metaData = target[key];
-        if (Object.prototype.toString.call(metaData) !== '[object Object]') {
+    _proxyApiMetadata(target, key) {
+        const metadata = target[key];
+        if (Object.prototype.toString.call(metadata) !== '[object Object]') {
             throw new TypeError(`Api metadata [${key}] is not an object`);
         }
 
-        const {
-            method,
-            url,
-        } = metaData;
+        const context = new Context(metadata, this.options);
 
-        if (!method || !url) {
-            console.log(`[ApiModule] Check your api metadata for [${key}]: `, metaData);
+        if (!context.url || !context.method) {
+            console.warn(`[ApiModule] Check your api metadata for [${key}]: `, metadata);
             throw new Error(`[ApiModule] Api metadata [${key}]: 'method' or 'url' value not found`);
         }
 
-        let parsedUrl = url;
 
         const request = (data, opt = {}) => {
+            context
+                .setData(data)
+                .setRequestAxiosOptions(opt);
+
             return new Promise((resolve, reject) => {
-                // fore request task
-                this.foreRequestMiddleWare(metaData, data, err => {
+                this.foreRequestMiddleWare(context, err => {
                     if (err) {
-                        this.fallbackMiddleWare(metaData, { data, error: err }, reject)
+                        context.setResponseError(err);
+                        this.fallbackMiddleWare(context, reject);
+                        return;
                     }
                     else {
-
                         const {
                             query = {},
-                            params = {},
                             body = {}
-                        } = data || {};
-
-                        // parse url
-                        // handle api like /a/:id/b/{param}
-                        parsedUrl = url
-                            .replace(/\B(?::(\w+)|{(\w+)})/g, (...args) => {
-                                return params[args[1] || args[2]];
-                            });
+                        } = context.data || {};
 
                         const config = Object.assign(
                             {},
                             {
-                                method: method.toLowerCase(),
-                                url: parsedUrl,
+                                method: context.method.toLowerCase(),
+                                url: context.parsedUrl,
                                 params: query,
                                 data: body,
                             },
-                            opt
+                            context.axiosOptions
                         );
 
                         this.options.axios(config)
                             .then(res => {
-                                this.postRequestMiddleWare(metaData, { data, response: res }, resolve);
+                                context.setResponse(res);
+                                this.postRequestMiddleWare(context, err => {
+                                    if (err) {
+                                        throw err;
+                                    }
+                                    resolve(context.response);
+                                });
                             })
                             .catch(err => {
-                                this.fallbackMiddleWare(metaData, { data, error: err }, reject)
+                                context.setResponseError(err);
+                                this.fallbackMiddleWare(context, reject)
                             });
                     }
                 })
             })
         };
 
-        request.meta = metaData;
+        request.context = context;
         return request;
     }
 }

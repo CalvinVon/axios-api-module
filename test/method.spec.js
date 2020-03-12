@@ -1,32 +1,17 @@
 import chai, { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
 import utils from './utils';
 import ApiModule from '../src';
 
-chai.use(chaiAsPromised);
-chai.should();
 
-describe('foreRequestMiddleWare methods', () => {
+describe('useBefore methods', () => {
     let server;
-    let testApiMeta,
+    let testMetadata,
         testData,
         apiModule,
         apiMapper;
 
     before('Setup server', done => {
-        server = utils.createServer(1111);
-        server.on('listening', done);
-    });
-
-    after('Stop and clean server', done => {
-        server.on('close', done);
-        server.close();
-        server = null;
-        ApiModule.foreRequestHook = null;
-    });
-
-    beforeEach('Setup ApiModule', () => {
-        testApiMeta = {
+        testMetadata = {
             url: '/api/test',
             method: 'get',
             name: 'test middleware methods'
@@ -43,93 +28,107 @@ describe('foreRequestMiddleWare methods', () => {
         };
         apiModule = new ApiModule({
             baseConfig: {
-                baseURL: 'http://localhost:1111'
+                baseURL: 'http://localhost:7788'
             },
             module: false,
-            apiMetas: {
-                test: testApiMeta
+            metadatas: {
+                test: testMetadata
             }
         });
 
         apiMapper = apiModule.getInstance();
+
+        server = utils.createServer(7788);
+        server.on('listening', () => {
+            done();
+        });
     });
 
-    afterEach('Clean ApiModule', () => {
-        testApiMeta = null;
-        testData = null;
-        apiModule = null;
-        apiMapper = null;
+    after('Stop and clean server', done => {
+        server.on('close', () => {
+            done();
+        });
+        server = null;
+        // ApiModule.foreRequestHook = null;
+        server.close();
     });
 
-    it('static method globalForeRequestMiddleWare', () => {
-        ApiModule.globalForeRequestMiddleWare((apiMeta, data, next) => {
-            expect(apiMeta).to.be.eq(testApiMeta);
-            expect(data).to.be.eq(testData);
+
+    it('static method globalBefore', () => {
+        ApiModule.globalBefore((context, next) => {
+            expect(context.metadata).to.be.not.eq(testMetadata);
+            expect(context.metadata).to.be.eql(testMetadata);
+            expect(context.data).to.be.eq(testData);
             next();
         });
 
-        return apiMapper.test(testData);
+        apiMapper.test(testData);
     });
 
-    it('instance method globalForeRequestMiddleWare', () => {
-        apiModule.registerForeRequestMiddleWare((apiMeta, data, next) => {
-            expect(apiMeta).to.be.eq(testApiMeta);
-            expect(data).to.be.eq(testData);
+    it('instance method useBefore', () => {
+        apiModule.useBefore((context, next) => {
+            expect(context.metadata).to.be.not.eq(testMetadata);
+            expect(context.metadata).to.be.eql(testMetadata);
+            expect(context.data).to.be.eq(testData);
             next();
         });
 
-        return apiMapper.test(testData);
+        apiMapper.test(testData)
     });
 
     it('instance method would override static method', () => {
-        apiModule.registerForeRequestMiddleWare((apiMeta, data, next) => {
+        apiModule.useBefore((context, next) => {
             next();
         });
-        ApiModule.globalForeRequestMiddleWare((apiMeta, data, next) => {
+        ApiModule.globalBefore((context, next) => {
             next();
         });
-        return apiMapper.test(testData);
+
+        apiMapper.test(testData);
     });
 
 
-    it('static method passing `null` would not throw an error', () => {
-        ApiModule.globalForeRequestMiddleWare(null);
-        return apiMapper.test(testData).should.be.fulfilled;
+    it('static method passing `null` would not throw an error', async () => {
+        ApiModule.globalBefore(null);
+        await apiMapper.test(testData);
     });
 
-    it('static method passing `123` would not throw an error', () => {
-        ApiModule.globalForeRequestMiddleWare(123);
-        return apiMapper.test(testData).should.be.fulfilled;
+    it('static method passing `123` would not throw an error', async () => {
+        ApiModule.globalBefore(123);
+        await apiMapper.test(testData);
     });
 
-    it('static method passing undefined would not throw an error', () => {
-        ApiModule.globalForeRequestMiddleWare();
-        return apiMapper.test(testData).should.be.fulfilled;
+    it('static method passing undefined would not throw an error', async () => {
+        ApiModule.globalBefore();
+        await apiMapper.test(testData);
     });
 
-    it('instance method passing undefined would not throw an error', () => {
-        apiModule.registerForeRequestMiddleWare();
-        return apiMapper.test(testData).should.be.fulfilled;
+    it('instance method passing undefined would not throw an error', async () => {
+        apiModule.useBefore();
+        await apiMapper.test(testData);
     });
 
-    it('passed some error then reject the request', () => {
-        apiModule.registerForeRequestMiddleWare((_, __, next) => {
+    it('passed some error then reject the request', (done) => {
+        apiModule.useBefore((context, next) => {
             next(new Error('some thing happened'));
         });
 
-        return apiMapper.test(testData).should.be.rejectedWith('some thing happened');
+        apiMapper.test(testData)
+            .catch(err => {
+                done();
+            })
     })
 });
 
-describe('postRequestMiddleWare methods', () => {
+describe('useAfter methods', () => {
     let server;
-    let testApiMeta,
+    let testMetadata,
         testData,
         apiModule,
         apiMapper;
 
     before('Setup server', done => {
-        server = utils.createServer(1111, (req, res) => {
+        server = utils.createServer(7788, (req, res) => {
             let rawData = '';
             req.on('data', chunk => rawData += chunk);
             req.on('end', () => {
@@ -152,10 +151,9 @@ describe('postRequestMiddleWare methods', () => {
     });
 
     beforeEach('Setup ApiModule', () => {
-        testApiMeta = {
+        testMetadata = {
             url: '/api/test',
             method: 'get',
-            name: 'test middleware methods'
         };
         testData = {
             query: {
@@ -169,11 +167,11 @@ describe('postRequestMiddleWare methods', () => {
         };
         apiModule = new ApiModule({
             baseConfig: {
-                baseURL: 'http://localhost:1111'
+                baseURL: 'http://localhost:7788'
             },
             module: false,
-            apiMetas: {
-                test: testApiMeta
+            metadatas: {
+                test: testMetadata
             }
         });
 
@@ -184,24 +182,25 @@ describe('postRequestMiddleWare methods', () => {
     });
 
     afterEach('Clean ApiModule', () => {
-        testApiMeta = null;
+        testMetadata = null;
         testData = null;
         apiModule = null;
         apiMapper = null;
     });
 
-    it('static method globalPostRequestMiddleWare', () => {
-        ApiModule.globalPostRequestMiddleWare((apiMeta, { response }, next) => {
-            expect(apiMeta).to.be.eq(testApiMeta);
+    it('static method globalAfter', async () => {
+        ApiModule.globalAfter((context, next) => {
+            expect(context.metadatas).to.be.eql(testMetadata);
             next(response);
         });
 
-        return apiMapper.test(testData).should.eventually.deep.eq(testData.body);
+        const res = await apiMapper.test(testData);
+        expect(res).to.be.eql(testData.body);
     });
 
-    it('instance method registerPostRequestMiddleWare', () => {
-        apiModule.registerPostRequestMiddleWare((apiMeta, { response }, next) => {
-            expect(apiMeta).to.be.eq(testApiMeta);
+    it('instance method registeruseAfter', () => {
+        apiModule.registeruseAfter((apiMeta, { response }, next) => {
+            expect(apiMeta).to.be.eq(testMetadata);
             next(response);
         });
 
@@ -209,41 +208,41 @@ describe('postRequestMiddleWare methods', () => {
     });
 
     it('instance method would override static method', () => {
-        apiModule.registerPostRequestMiddleWare((apiMeta, { response }, next) => {
+        apiModule.registeruseAfter((apiMeta, { response }, next) => {
             next(response);
         });
-        ApiModule.globalPostRequestMiddleWare((apiMeta, responseWrapper, next) => {
+        ApiModule.globalAfter((apiMeta, responseWrapper, next) => {
             next();
         });
         return apiMapper.test(testData).should.eventually.deep.eq(testData.body);
     });
 
 
-    it('static method passing `null` would not throw an errors', () => {
-        ApiModule.globalPostRequestMiddleWare(null);
-        return apiMapper.test(testData).should.be.fulfilled;
+    it('static method passing `null` would not throw an errors', async () => {
+        ApiModule.globalAfter(null);
+        await apiMapper.test(testData);
     });
 
-    it('static method passing `123` would not throw an error', () => {
-        ApiModule.globalPostRequestMiddleWare(123);
-        return apiMapper.test(testData).should.be.fulfilled;
+    it('static method passing `123` would not throw an error', async () => {
+        ApiModule.globalAfter(123);
+        await apiMapper.test(testData);
     });
 
-    it('static method passing undefined would not throw an error', () => {
-        ApiModule.globalPostRequestMiddleWare();
-        return apiMapper.test(testData).should.be.fulfilled;
+    it('static method passing undefined would not throw an error', async () => {
+        ApiModule.globalAfter();
+        await apiMapper.test(testData);
     });
 
-    it('instance method passing undefined would not throw an error', () => {
-        apiModule.registerPostRequestMiddleWare();
-        return apiMapper.test(testData).should.be.fulfilled;
+    it('instance method passing undefined would not throw an error', async () => {
+        apiModule.registeruseAfter();
+        await apiMapper.test(testData);
     });
 
 });
 
 describe('fallbackMiddleWare methods', () => {
     let server;
-    let testApiMeta,
+    let testMetadata,
         testData,
         apiModule,
         apiMapper;
@@ -261,7 +260,7 @@ describe('fallbackMiddleWare methods', () => {
 
 
     beforeEach('Setup ApiModule', () => {
-        testApiMeta = {
+        testMetadata = {
             url: '/api/test',
             method: 'get',
             name: 'test middleware methods'
@@ -283,8 +282,8 @@ describe('fallbackMiddleWare methods', () => {
             },
             module: false,
             console: true,
-            apiMetas: {
-                test: testApiMeta
+            metadatas: {
+                test: testMetadata
             }
         });
 
@@ -292,7 +291,7 @@ describe('fallbackMiddleWare methods', () => {
     });
 
     afterEach('Clean ApiModule', () => {
-        testApiMeta = null;
+        testMetadata = null;
         testData = null;
         apiModule = null;
         apiMapper = null;
@@ -301,7 +300,7 @@ describe('fallbackMiddleWare methods', () => {
     it('static method registerFallbackMiddleWare', () => {
         let middleware_error;
         ApiModule.globalFallbackMiddleWare((apiMeta, { data, error }, next) => {
-            expect(apiMeta).to.be.deep.eq(testApiMeta);
+            expect(apiMeta).to.be.deep.eq(testMetadata);
             expect(data).to.be.deep.eq(testData);
             middleware_error = error;
             next(error);
@@ -313,7 +312,7 @@ describe('fallbackMiddleWare methods', () => {
     it('instance method registerFallbackMiddleWare', () => {
         let middleware_error;
         apiModule.registerFallbackMiddleWare((apiMeta, { data, error }, next) => {
-            expect(apiMeta).to.be.deep.eq(testApiMeta);
+            expect(apiMeta).to.be.deep.eq(testMetadata);
             expect(data).to.be.deep.eq(testData);
             middleware_error = error;
             next(error);
