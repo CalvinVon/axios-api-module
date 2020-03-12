@@ -26,7 +26,7 @@ describe('baseConfig', () => {
         const apiModule = new ApiModule();
         const apiMapper = apiModule.getInstance();
         expect(apiMapper).to.has.ownProperty('$module');
-        expect(apiMapper['$module']).to.be.eq(apiModule);
+        expect(apiMapper['$module']).to.be.equal(apiModule);
     });
 
     it('no modular namespace api metas', () => {
@@ -93,9 +93,9 @@ describe('baseConfig', () => {
             });
         };
 
-        expect(produceEmptyMeta).to.throw(Error, /Api metadata \[(\w+)\]: 'method' or 'url' value not found/);
-        expect(produceNullMeta).to.throw(TypeError, /Api metadata \[(\w+)\] is not an object/);
-        expect(produceUndefinedMeta).to.throw(TypeError, /Api metadata \[(\w+)\] is not an object/);
+        expect(produceEmptyMeta).to.throw(Error, /api metadata \[(\w+)\]: 'method' or 'url' value not found/i);
+        expect(produceNullMeta).to.throw(TypeError, /api metadata \[(\w+)\] is not an object/i);
+        expect(produceUndefinedMeta).to.throw(TypeError, /api metadata \[(\w+)\] is not an object/i);
     });
 
     it('one instance will return same instance of axios', () => {

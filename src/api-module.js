@@ -188,7 +188,7 @@ export default class ApiModule {
                 const {
                     method,
                     url
-                } = apiMeta;
+                } = context.metadata;
                 const msg = `[ApiModule] [${method.toUpperCase()} ${url}] failed with ${error.message}`;
                 console.error(new Error(msg));
             }
@@ -220,27 +220,29 @@ export default class ApiModule {
     _proxyApiMetadata(target, key) {
         const metadata = target[key];
         if (Object.prototype.toString.call(metadata) !== '[object Object]') {
-            throw new TypeError(`Api metadata [${key}] is not an object`);
+            throw new TypeError(`[ApiModule] api metadata [${key}] is not an object`);
         }
 
         const context = new Context(metadata, this.options);
 
         if (!context.url || !context.method) {
-            console.warn(`[ApiModule] Check your api metadata for [${key}]: `, metadata);
-            throw new Error(`[ApiModule] Api metadata [${key}]: 'method' or 'url' value not found`);
+            console.warn(`[ApiModule] check your api metadata for [${key}]: `, metadata);
+            throw new Error(`[ApiModule] api metadata [${key}]: 'method' or 'url' value not found`);
         }
 
 
         const request = (data, opt = {}) => {
             context
                 .setData(data)
-                .setRequestAxiosOptions(opt);
+                .setRequestOptions(opt);
 
             return new Promise((resolve, reject) => {
                 this.foreRequestMiddleWare(context, err => {
-                    if (err) {
-                        context.setResponseError(err);
-                        this.fallbackMiddleWare(context, reject);
+                    if (err || context.responseError) {
+                        err && context.setResponseError(err);
+                        this.fallbackMiddleWare(context, () => {
+                            reject(context.responseError);
+                        });
                         return;
                     }
                     else {
@@ -264,15 +266,21 @@ export default class ApiModule {
                             .then(res => {
                                 context.setResponse(res);
                                 this.postRequestMiddleWare(context, err => {
-                                    if (err) {
-                                        throw err;
+                                    if (err || context.responseError) {
+                                        err && context.setResponseError(err);
+                                        throw context.responseError;
                                     }
                                     resolve(context.response);
                                 });
                             })
                             .catch(err => {
                                 context.setResponseError(err);
-                                this.fallbackMiddleWare(context, reject)
+                                this.fallbackMiddleWare(context, err => {
+                                    if (err || context.responseError) {
+                                        err && context.setResponseError(err);
+                                    }
+                                    reject(context.responseError);
+                                });
                             });
                     }
                 })

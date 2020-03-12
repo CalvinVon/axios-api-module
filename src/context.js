@@ -45,22 +45,33 @@ export default class Context {
         return this;
     }
 
-    setRequestAxiosOptions(axiosOptions) {
+    /**
+     * set single axios request options
+     * @param {AxiosOptions} axiosOptions 
+     * @private
+     */
+    setRequestOptions(axiosOptions) {
         if (isObject(axiosOptions)) {
             this._reqAxiosOpts = axiosOptions;
         }
         else {
-            console.error('[ApiModule] the request parameter `opt` is not an object');
+            console.error(`[ApiModule] the request parameter, the parameter \`${axiosOptions}\` is not an object`);
         }
         return this;
     }
 
+
+    /**
+     * set axios options (Designed for invocation in middleware)
+     * @param {*} axiosOptions 
+     * @public
+     */
     setAxiosOptions(axiosOptions) {
         if (isObject(axiosOptions)) {
             this._metaAxiosOpts = axiosOptions;
         }
         else {
-            console.error('[ApiModule] configure axios options error, the parameter `axiosOptions` is not an object');
+            console.error(`[ApiModule] configure axios options error, the parameter \`${axiosOptions}\` is not an object`);
         }
     }
 

@@ -3,6 +3,13 @@ import utils from './utils';
 import ApiModule from '../src';
 
 
+function cleanHooks() {
+    ApiModule.foreRequestHook = null;
+    ApiModule.postRequestHook = null;
+    ApiModule.fallbackHook = null;
+}
+
+
 describe('useBefore methods', () => {
     let server;
     let testMetadata,
@@ -11,6 +18,23 @@ describe('useBefore methods', () => {
         apiMapper;
 
     before('Setup server', done => {
+        server = utils.createServer(7788);
+        server.on('listening', () => {
+            done();
+        });
+    });
+
+    after('Stop and clean server', done => {
+        server.on('close', () => {
+            server = null;
+            done();
+        });
+
+        cleanHooks();
+        server.close();
+    });
+
+    beforeEach(() => {
         testMetadata = {
             url: '/api/test',
             method: 'get',
@@ -37,28 +61,18 @@ describe('useBefore methods', () => {
         });
 
         apiMapper = apiModule.getInstance();
-
-        server = utils.createServer(7788);
-        server.on('listening', () => {
-            done();
-        });
     });
 
-    after('Stop and clean server', done => {
-        server.on('close', () => {
-            done();
-        });
-        server = null;
-        // ApiModule.foreRequestHook = null;
-        server.close();
+    afterEach(() => {
+        cleanHooks();
     });
 
 
     it('static method globalBefore', () => {
         ApiModule.globalBefore((context, next) => {
-            expect(context.metadata).to.be.not.eq(testMetadata);
+            expect(context.metadata).to.be.not.equal(testMetadata);
             expect(context.metadata).to.be.eql(testMetadata);
-            expect(context.data).to.be.eq(testData);
+            expect(context.data).to.be.equal(testData);
             next();
         });
 
@@ -67,9 +81,9 @@ describe('useBefore methods', () => {
 
     it('instance method useBefore', () => {
         apiModule.useBefore((context, next) => {
-            expect(context.metadata).to.be.not.eq(testMetadata);
+            expect(context.metadata).to.be.not.equal(testMetadata);
             expect(context.metadata).to.be.eql(testMetadata);
-            expect(context.data).to.be.eq(testData);
+            expect(context.data).to.be.equal(testData);
             next();
         });
 
@@ -140,14 +154,18 @@ describe('useAfter methods', () => {
             // prevent default response action
             return true;
         });
-        server.on('listening', done);
+        server.on('listening', () => {
+            done();
+        });
     });
 
     after('Stop and clean server', done => {
-        server.on('close', done);
+        server.on('close', () => {
+            server = null;
+            done();
+        });
         server.close();
-        server = null;
-        ApiModule.foreRequestHook = null;
+        cleanHooks();
     });
 
     beforeEach('Setup ApiModule', () => {
@@ -182,39 +200,40 @@ describe('useAfter methods', () => {
     });
 
     afterEach('Clean ApiModule', () => {
-        testMetadata = null;
-        testData = null;
-        apiModule = null;
-        apiMapper = null;
+        cleanHooks();
     });
 
     it('static method globalAfter', async () => {
         ApiModule.globalAfter((context, next) => {
-            expect(context.metadatas).to.be.eql(testMetadata);
-            next(response);
+            expect(context.metadata).to.be.not.equal(testMetadata);
+            expect(context.metadata).to.be.eql(testMetadata);
+            next();
         });
 
         const res = await apiMapper.test(testData);
         expect(res).to.be.eql(testData.body);
     });
 
-    it('instance method registeruseAfter', () => {
-        apiModule.registeruseAfter((apiMeta, { response }, next) => {
-            expect(apiMeta).to.be.eq(testMetadata);
-            next(response);
-        });
-
-        return apiMapper.test(testData).should.eventually.deep.eq(testData.body);
-    });
-
-    it('instance method would override static method', () => {
-        apiModule.registeruseAfter((apiMeta, { response }, next) => {
-            next(response);
-        });
-        ApiModule.globalAfter((apiMeta, responseWrapper, next) => {
+    it('instance method useAfter', async () => {
+        apiModule.useAfter((context, next) => {
+            expect(context.metadata).to.be.eql(testMetadata);
             next();
         });
-        return apiMapper.test(testData).should.eventually.deep.eq(testData.body);
+
+        const res = await apiMapper.test(testData);
+        expect(res).to.be.eql(testData.body);
+    });
+
+    it('instance method would override static method', async () => {
+        apiModule.useAfter((context, next) => {
+            next();
+        });
+        ApiModule.globalAfter((context, next) => {
+            next(new Error('It should not go here.'));
+        });
+
+        const res = await apiMapper.test(testData);
+        expect(res).to.be.eql(testData.body);
     });
 
 
@@ -234,28 +253,34 @@ describe('useAfter methods', () => {
     });
 
     it('instance method passing undefined would not throw an error', async () => {
-        apiModule.registeruseAfter();
+        apiModule.useAfter();
         await apiMapper.test(testData);
     });
 
 });
 
-describe('fallbackMiddleWare methods', () => {
+describe('useCatch methods', () => {
     let server;
     let testMetadata,
         testData,
         apiModule,
         apiMapper;
 
+
     before('Setup server', done => {
-        server = utils.createServer(1111);
-        server.on('listening', done);
+        server = utils.createServer(7788);
+        server.on('listening', () => {
+            done();
+        });
     });
 
     after('Stop and clean server', done => {
-        server.on('close', done);
+        server.on('close', () => {
+            server = null;
+            done();
+        });
         server.close();
-        server = null;
+        cleanHooks();
     });
 
 
@@ -277,7 +302,8 @@ describe('fallbackMiddleWare methods', () => {
         };
         apiModule = new ApiModule({
             baseConfig: {
-                baseURL: 'http://localhost:2222',
+                // a typo error on purpose
+                baseURL: 'http://localhost:7789',
                 timeout: 1000
             },
             module: false,
@@ -291,67 +317,109 @@ describe('fallbackMiddleWare methods', () => {
     });
 
     afterEach('Clean ApiModule', () => {
-        testMetadata = null;
-        testData = null;
-        apiModule = null;
-        apiMapper = null;
+        cleanHooks();
     });
 
-    it('static method registerFallbackMiddleWare', () => {
-        let middleware_error;
-        ApiModule.globalFallbackMiddleWare((apiMeta, { data, error }, next) => {
-            expect(apiMeta).to.be.deep.eq(testMetadata);
-            expect(data).to.be.deep.eq(testData);
-            middleware_error = error;
-            next(error);
+    it('static method useCatch', async () => {
+        const middlewareError = new Error('I made a mistake');
+        ApiModule.globalBefore((context, next) => {
+            // context.setResponseError();
+            next(middlewareError);
+        });
+        ApiModule.globalCatch((context, next) => {
+            expect(context.metadata).to.be.deep.equal(testMetadata);
+            expect(context.data).to.be.deep.equal(testData);
+            expect(context.responseError).to.be.equal(middlewareError);
+            next();
         });
 
-        return apiMapper.test(testData).should.be.rejectedWith(middleware_error);
+        try {
+            await apiMapper.test(testData);
+        } catch (error) {
+            expect(error).to.be.equal(middlewareError);
+        }
     });
 
-    it('instance method registerFallbackMiddleWare', () => {
-        let middleware_error;
-        apiModule.registerFallbackMiddleWare((apiMeta, { data, error }, next) => {
-            expect(apiMeta).to.be.deep.eq(testMetadata);
-            expect(data).to.be.deep.eq(testData);
-            middleware_error = error;
-            next(error);
+    it('instance method useCatch', async () => {
+        const middlewareError = new Error('I made a mistake');
+        apiModule.useBefore((context, next) => {
+            // context.setResponseError();
+            next(middlewareError);
+        });
+        apiModule.useCatch((context, next) => {
+            expect(context.metadata).to.be.deep.equal(testMetadata);
+            expect(context.data).to.be.deep.equal(testData);
+            expect(context.responseError).to.be.equal(middlewareError);
+            next();
         });
 
-        return apiMapper.test(testData).should.be.rejectedWith(middleware_error);
+        try {
+            await apiMapper.test(testData);
+        } catch (error) {
+            expect(error).to.be.equal(middlewareError);
+        }
     });
 
-    it('instance method would override static method', () => {
-        let middleware_error;
-        apiModule.registerFallbackMiddleWare((apiMeta, { error }, next) => {
-            middleware_error = error;
+
+    it('instance method would override static method', async () => {
+        const error = new Error('A mistake');
+        const anthorError = new Error('Anthor mistake');
+
+        apiModule.useBefore((context, next) => {
             next(error);
         });
-        ApiModule.globalFallbackMiddleWare((apiMeta, { error }, next) => {
-            next(error);
+        apiModule.useCatch((context, next) => {
+            expect(context.responseError).to.be.equal(error);
+            context.setResponseError(anthorError);
+            next();
+        });
+        ApiModule.globalCatch((context, next) => {
+            throw 'It should not go here';
+            next();
         });
 
-        return apiMapper.test(testData).should.be.rejectedWith(middleware_error);
+        try {
+            await apiMapper.test(testData);
+        } catch (err) {
+            expect(err).to.be.equal(anthorError);
+            expect(err).to.be.not.equal(error);
+        }
     });
 
-    it('static method passing `null` would not throw an error', () => {
-        ApiModule.globalFallbackMiddleWare(null);
-        return apiMapper.test(testData).should.be.rejectedWith(/(connect ECONNREFUSED|timeout)/);
+    it('static method passing `null` would not throw an error', async () => {
+        ApiModule.globalCatch(null);
+        try {
+            await apiMapper.test(testData);
+        } catch (error) {
+            expect(error.message).to.be.match(/(connect ECONNREFUSED|timeout)/);
+        }
     });
 
-    it('static method passing `123` would not throw an error', () => {
-        ApiModule.globalFallbackMiddleWare(123);
-        return apiMapper.test(testData).should.be.rejectedWith(/(connect ECONNREFUSED|timeout)/);
+    it('static method passing `123` would not throw an error', async () => {
+        ApiModule.globalCatch(123);
+        try {
+            await apiMapper.test(testData);
+        } catch (error) {
+            expect(error.message).to.be.match(/(connect ECONNREFUSED|timeout)/);
+        }
     });
 
-    it('static method passing undefined would not throw an error', () => {
-        ApiModule.globalFallbackMiddleWare();
-        return apiMapper.test(testData).should.be.rejectedWith(/(connect ECONNREFUSED|timeout)/);
+    it('static method passing undefined would not throw an error', async () => {
+        ApiModule.globalCatch();
+        try {
+            await apiMapper.test(testData);
+        } catch (error) {
+            expect(error.message).to.be.match(/(connect ECONNREFUSED|timeout)/);
+        }
     });
 
-    it('instance method passing undefined would not throw an error', () => {
-        apiModule.registerFallbackMiddleWare();
-        return apiMapper.test(testData).should.be.rejectedWith(/(connect ECONNREFUSED|timeout)/);
+    it('instance method passing undefined would not throw an error', async () => {
+        apiModule.useCatch();
+        try {
+            await apiMapper.test(testData);
+        } catch (error) {
+            expect(error.message).to.be.match(/(connect ECONNREFUSED|timeout)/);
+        }
     });
 
 });
