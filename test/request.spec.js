@@ -56,6 +56,28 @@ describe('request by baseConfig', () => {
 });
 
 describe('api metadata mapper', () => {
+
+    beforeEach(() => {
+        utils.overrideConsole();
+    });
+
+    afterEach(() => {
+        utils.recoverConsole();
+    });
+
+    it('api request mapper set non-object options', () => {
+        const apiModule = new ApiModule({
+            module: false,
+            metadatas: {
+                test: {
+                    url: '/test',
+                    method: 'get'
+                }
+            }
+        });
+
+        expect(() => apiModule.getInstance().test(null, null)).to.throw(/the request parameter/);
+    });
     it('test path parameter mode url', done => {
         const apiModule = new ApiModule({
             baseConfig: {
@@ -141,20 +163,6 @@ describe('api metadata mapper', () => {
             console.log(error)
         }
     });
-
-    // it('api request mapper set non-object options', () => {
-    //     const apiModule = new ApiModule({
-    //         module: false,
-    //         metadatas: {
-    //             test: {
-    //                 url: '/test',
-    //                 method: 'get'
-    //             }
-    //         }
-    //     });
-
-    //     expect(() => apiModule.getInstance().test(null, null)).to.throw(/the request parameter/);
-    // });
 });
 
 

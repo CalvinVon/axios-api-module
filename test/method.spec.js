@@ -323,7 +323,7 @@ describe('useCatch methods', () => {
     it('static method useCatch', async () => {
         const middlewareError = new Error('I made a mistake');
         ApiModule.globalBefore((context, next) => {
-            // context.setResponseError();
+            // context.setError();
             next(middlewareError);
         });
         ApiModule.globalCatch((context, next) => {
@@ -343,7 +343,7 @@ describe('useCatch methods', () => {
     it('instance method useCatch', async () => {
         const middlewareError = new Error('I made a mistake');
         apiModule.useBefore((context, next) => {
-            // context.setResponseError();
+            // context.setError();
             next(middlewareError);
         });
         apiModule.useCatch((context, next) => {
@@ -370,7 +370,7 @@ describe('useCatch methods', () => {
         });
         apiModule.useCatch((context, next) => {
             expect(context.responseError).to.be.equal(error);
-            context.setResponseError(anthorError);
+            context.setError(anthorError);
             next();
         });
         ApiModule.globalCatch((context, next) => {

@@ -3,9 +3,9 @@ export default class Context {
     // Private members
     _options;
     _metadata;
-    _data;
-    _response;
-    _error;
+    _data = null;
+    _response = null;
+    _responseError = null;
     _reqAxiosOpts = {};
     _metaAxiosOpts = {};
 
@@ -40,8 +40,8 @@ export default class Context {
      * @param {any} error
      * @return {Context}
      */
-    setResponseError(error) {
-        this._error = error;
+    setError(error) {
+        this._responseError = error;
         return this;
     }
 
@@ -50,7 +50,7 @@ export default class Context {
      * @param {AxiosOptions} axiosOptions 
      * @private
      */
-    setRequestOptions(axiosOptions) {
+    _setRequestOptions(axiosOptions) {
         if (isObject(axiosOptions)) {
             this._reqAxiosOpts = axiosOptions;
         }
@@ -111,7 +111,7 @@ export default class Context {
     }
 
     get responseError() {
-        return this._error;
+        return this._responseError;
     }
 
     get axiosOptions() {

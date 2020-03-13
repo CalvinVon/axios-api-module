@@ -230,20 +230,39 @@ export default class ApiModule {
             throw new Error(`[ApiModule] api metadata [${key}]: 'method' or 'url' value not found`);
         }
 
+        /**
+         * Collect errors and set errors uniformly. Returns if there is an error
+         * @param {Error|any} err
+         * @return {Boolean}
+         */
+        const handleResponseError = err => {
+            const error = err || context.responseError;
+            if (!error) return false;
+
+            if (error instanceof Error) {
+                context.setError(error);
+            }
+            else if (typeof error === 'string') {
+                context.setError(new Error(error));
+            }
+            else {
+                context.setError(error);
+            }
+            return true;
+        };
+
 
         const request = (data, opt = {}) => {
             context
                 .setData(data)
-                .setRequestOptions(opt);
+                ._setRequestOptions(opt);
 
             return new Promise((resolve, reject) => {
                 this.foreRequestMiddleWare(context, err => {
-                    if (err || context.responseError) {
-                        err && context.setResponseError(err);
+                    if (handleResponseError(err)) {
                         this.fallbackMiddleWare(context, () => {
                             reject(context.responseError);
                         });
-                        return;
                     }
                     else {
                         const {
@@ -266,19 +285,16 @@ export default class ApiModule {
                             .then(res => {
                                 context.setResponse(res);
                                 this.postRequestMiddleWare(context, err => {
-                                    if (err || context.responseError) {
-                                        err && context.setResponseError(err);
+                                    if (handleResponseError(err)) {
                                         throw context.responseError;
                                     }
                                     resolve(context.response);
                                 });
                             })
-                            .catch(err => {
-                                context.setResponseError(err);
+                            .catch(error => {
+                                handleResponseError(error);
                                 this.fallbackMiddleWare(context, err => {
-                                    if (err || context.responseError) {
-                                        err && context.setResponseError(err);
-                                    }
+                                    handleResponseError(err);
                                     reject(context.responseError);
                                 });
                             });
