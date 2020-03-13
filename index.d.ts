@@ -1,60 +1,54 @@
 import { AxiosRequestConfig, AxiosInstance, CancelTokenSource } from "axios";
 
 export interface ApiModuleConfig {
-    apiMetas: ApiMetaMapper | { [namespace: string]: ApiMetaMapper };
+    metadatas: ApiMetadataMapper | { [namespace: string]: ApiMetadataMapper };
     module?: Boolean;
     console?: Boolean;
     baseConfig?: AxiosRequestConfig;
 }
 
 export type ForeRequestHook = (
-    apiMeta: ApiMeta,
-    data: Object | undefined,
-    next: (error?: Error) => null
+    context: Context,
+    next: (error?: any) => null
 ) => void;
 
 export type PostRequestHook = (
-    apiMeta: ApiMeta,
-    data: { response: Object, data: Object | undefined },
-    next: (response: Object) => null
+    context: Context,
+    next: (error?: any) => null
 ) => void;
 
 export type FallbackHook = (
-    apiMeta: ApiMeta,
-    data: { error: Error, data: Object | undefined },
-    next: (error?: Error) => null
+    context: Context,
+    next: (error?: any) => null
 ) => void;
 
-export interface ApiMetaMapper {
-    [apiMetaName: string]: ApiMeta;
+export interface ApiMetadataMapper {
+    [metadataName: string]: ApiMetadata;
 }
 
-export interface ApiMeta {
+export interface ApiMetadata {
     method: "get" | "post" | "patch" | "delete" | "put" | "head";
-    name?: string;
     url: string;
 }
 
-interface TransformedApiData {
+interface TransformedRequestData {
     query?: Object;
     params?: Object;
     body?: Object;
 }
 
-export type TransformedApi = (
-    data?: TransformedApiData,
+export type TransformedRequest = (
+    data?: TransformedRequestData,
     opt?: AxiosRequestConfig
 ) => Promise<any>;
 
-export interface TransformedApiMapper {
-    $module?: ApiModule;
-    [apiMetaName: string]: TransformedApi;
+export interface TransformedRequestMapper {
+    [metadataName: string]: TransformedRequest;
 }
 
 export interface ApiModuleOptions {
     axios: AxiosInstance;
-    apiMetas: ApiMetaMapper | { [namespace: string]: ApiMetaMapper };
-    apis: Object;
+    metadatas: ApiMetadataMapper | { [namespace: string]: ApiMetadataMapper };
     module: boolean;
     console: boolean;
     baseConfig: AxiosRequestConfig;
@@ -65,24 +59,41 @@ declare class ApiModule {
 
     options: ApiModuleOptions;
     static globalBefore(foreRequestHook: ForeRequestHook): void;
-    static globalPostRequestMiddleWare(postRequestHook: PostRequestHook): void;
-    static globalFallbackMiddleWare(fallbackHook: FallbackHook): void;
+    static globalAfter(postRequestHook: PostRequestHook): void;
+    static globalCatch(fallbackHook: FallbackHook): void;
 
     useBefore(foreRequestHook: ForeRequestHook): void;
-    registerPostRequestMiddleWare(postRequestHook: PostRequestHook): void;
-    registerFallbackMiddleWare(fallbackHook: FallbackHook): void;
+    useAfter(postRequestHook: PostRequestHook): void;
+    useCatch(fallbackHook: FallbackHook): void;
 
     /**
      * Get moduled/single module namespace api map
      */
     getInstance():
-        | TransformedApiMapper
+        TransformedRequestMapper
         | {
-            [namespace: string]: TransformedApiMapper;
-            $module?: ApiModule
+            $module?: ApiModule;
+            [namespace: string]: TransformedRequestMapper
         };
-    getAxios(): any;
+    getAxios(): AxiosInstance;
     generateCancellationSource(): CancelTokenSource;
 }
+
+declare class Context {
+    setData(data: any): Context;
+    setResponse(response: any): Context;
+    setError(error: any): Context;
+    setAxiosOptions(options: AxiosRequestConfig): Context;
+
+    metadata: ApiMetadata;
+    method: string;
+    url: string;
+    parsedUrl: string;
+
+    data: any;
+    response: any;
+    responseError: any;
+}
+
 
 export default ApiModule;
