@@ -2,47 +2,33 @@ import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
 import _createClass from "@babel/runtime/helpers/createClass";
 import _defineProperty from "@babel/runtime/helpers/defineProperty";
 import axios from 'axios';
+import Context from './context';
 
-var defaultForeRequestHook = function defaultForeRequestHook() {
-  return function (_, __, next) {
-    return next();
-  };
-};
-
-var defaultPostRequestHook = function defaultPostRequestHook() {
-  return function (_, _ref, next) {
-    var response = _ref.response;
-    return next(response);
-  };
-};
-
-var defaultFallbackHook = function defaultFallbackHook() {
-  return function (_, _ref2, next) {
-    var error = _ref2.error;
-    return next(error);
-  };
+var defaultMiddleware = function defaultMiddleware(context, next) {
+  return next(context.responseError);
 };
 /**
  * Api Module class
  * 
  * @static {Function} foreRequestHook
+ * @static {Function} postRequestHook
  * @static {Function} fallbackHook
  * 
  * @member {Object} options
  * @member {Function} foreRequestHook
+ * @member {Function} postRequestHook
  * @member {Function} fallbackHook
  * 
  * @method useBefore(hook)
- * @method registerFallbackMiddleWare(hook)
+ * @method useAfter(hook)
+ * @method useCatch(hook)
  * @method getAxios()
- * @method getInstance(hook)
+ * @method getInstance()
  * @method generateCancellationSource() get axios cancellation source for cancel api
  */
 
 
-var ApiModule =
-/*#__PURE__*/
-function () {
+var ApiModule = /*#__PURE__*/function () {
   function ApiModule() {
     var _this = this;
 
@@ -52,33 +38,34 @@ function () {
 
     _defineProperty(this, "options", {});
 
+    _defineProperty(this, "apiMapper", void 0);
+
     _defineProperty(this, "foreRequestHook", void 0);
 
     _defineProperty(this, "postRequestHook", void 0);
 
     _defineProperty(this, "fallbackHook", void 0);
 
-    var _config$apiMetas = config.apiMetas,
-        apiMetas = _config$apiMetas === void 0 ? {} : _config$apiMetas,
-        _config$module = config.module,
-        modularNsp = _config$module === void 0 ? true : _config$module,
+    var _config$metadatas = config.metadatas,
+        metadatas = _config$metadatas === void 0 ? {} : _config$metadatas,
+        modularNsp = config.module,
         _config$console = config.console,
         useConsole = _config$console === void 0 ? true : _config$console,
         _config$baseConfig = config.baseConfig,
         baseConfig = _config$baseConfig === void 0 ? {} : _config$baseConfig;
-    var API_ = {};
+    this.apiMapper = {};
 
     if (modularNsp) {
       // moduled namespace
-      Object.keys(apiMetas).forEach(function (apiName) {
-        API_[apiName] = _this._Proxyable(apiMetas[apiName]);
+      Object.keys(metadatas).forEach(function (apiName) {
+        _this.apiMapper[apiName] = _this._proxyable(metadatas[apiName]);
       });
     } else {
       // single module
-      API_ = this._Proxyable(apiMetas);
+      this.apiMapper = this._proxyable(metadatas);
     }
 
-    Object.defineProperty(API_, '$module', {
+    Object.defineProperty(this.apiMapper, '$module', {
       configurable: false,
       enumerable: false,
       writable: false,
@@ -86,8 +73,7 @@ function () {
     });
     this.options = {
       axios: axios.create(baseConfig),
-      apiMetas: apiMetas,
-      apis: API_,
+      metadatas: metadatas,
       module: modularNsp,
       console: useConsole,
       baseConfig: baseConfig
@@ -107,7 +93,7 @@ function () {
      * @param {Function} foreRequestHook(apiMeta, data = {}, next)
      */
     value: function useBefore() {
-      var foreRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultForeRequestHook();
+      var foreRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultMiddleware;
       this.foreRequestHook = foreRequestHook;
     }
     /**
@@ -116,9 +102,9 @@ function () {
      */
 
   }, {
-    key: "registerPostRequestMiddleWare",
-    value: function registerPostRequestMiddleWare() {
-      var postRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultPostRequestHook();
+    key: "useAfter",
+    value: function useAfter() {
+      var postRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultMiddleware;
       this.postRequestHook = postRequestHook;
     }
     /**
@@ -127,19 +113,10 @@ function () {
      */
 
   }, {
-    key: "registerFallbackMiddleWare",
-    value: function registerFallbackMiddleWare() {
-      var fallbackHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultFallbackHook();
+    key: "useCatch",
+    value: function useCatch() {
+      var fallbackHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultMiddleware;
       this.fallbackHook = fallbackHook;
-    }
-    /**
-     * @returns {Axios} get instance of Axios
-     */
-
-  }, {
-    key: "getAxios",
-    value: function getAxios() {
-      return this.options.axios;
     }
     /**
      * get axios cancellation source for cancel api
@@ -152,28 +129,36 @@ function () {
       return axios.CancelToken.source();
     }
     /**
-     * @returns {Object} get instance of api mapper
+     * @returns {Axios} get instance of Axios
+     */
+
+  }, {
+    key: "getAxios",
+    value: function getAxios() {
+      return this.options.axios;
+    }
+    /**
+     * @returns {Object} get instance of api metadata mapper
      */
 
   }, {
     key: "getInstance",
     value: function getInstance() {
-      return this.options.apis;
+      return this.apiMapper;
     }
     /**
      * fore-request middleware
-     * @param {ApiMeta} apiMeta api metadata
-     * @param {Object} data request data
-     * @param {Query/Body} next(err) call for next step
+     * @param {Context} context
+     * @param {Function} next
      */
 
   }, {
     key: "foreRequestMiddleWare",
-    value: function foreRequestMiddleWare(apiMeta, data, next) {
-      var hookFunction = this.foreRequestHook || ApiModule.foreRequestHook || defaultForeRequestHook();
+    value: function foreRequestMiddleWare(context, next) {
+      var hookFunction = this.foreRequestHook || ApiModule.foreRequestHook || defaultMiddleware;
 
       if (typeof hookFunction === 'function') {
-        hookFunction.call(this, apiMeta, data, next);
+        hookFunction.call(this, context, next);
       } else {
         console.warn("[ApiModule] foreRequestMiddleWare: ".concat(hookFunction, " is not a valid foreRequestHook function"));
         next();
@@ -181,52 +166,50 @@ function () {
     }
     /**
      * post-request middleware
-     * @param {ApiMeta} apiMeta api metadata
-     * @param {Object} resWrapper contains `response` data and `data` fields
-     * @param {Query/Body} next(err) call for next step
+     * @param {Context} context
+     * @param {Function} next
      */
 
   }, {
     key: "postRequestMiddleWare",
-    value: function postRequestMiddleWare(apiMeta, resWrapper, next) {
-      var hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultPostRequestHook();
+    value: function postRequestMiddleWare(context, next) {
+      var hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultMiddleware;
 
       if (typeof hookFunction === 'function') {
-        hookFunction.call(this, apiMeta, resWrapper, next);
+        hookFunction.call(this, context, next);
       } else {
         console.warn("[ApiModule] postRequestMiddleWare: ".concat(hookFunction, " is not a valid foreRequestHook function"));
-        next(resWrapper.response);
+        next();
       }
     }
     /**
      * fallback middleWare
-     * @param {ApiMeta} apiMeta api metadata
-     * @param {Object} errorWrapper contains `error` data and `data` fields
-     * @param {Function} next(err) call for next step
+     * @param {Context} context
+     * @param {Function} next
      */
 
   }, {
     key: "fallbackMiddleWare",
-    value: function fallbackMiddleWare(apiMeta, errorWrapper, next) {
+    value: function fallbackMiddleWare(context, next) {
       var _this2 = this;
 
-      var error = errorWrapper.error;
-      var hookFunction = this.fallbackHook || ApiModule.fallbackHook || defaultFallbackHook();
+      var error = context.responseError;
+      var hookFunction = this.fallbackHook || ApiModule.fallbackHook || defaultMiddleware;
 
       var defaultErrorHandler = function defaultErrorHandler() {
         if (_this2.options.console) {
-          var name = apiMeta.name,
-              method = apiMeta.method,
-              url = apiMeta.url;
-          var msg = "[ApiModule] ".concat(name, " [").concat(method.toUpperCase(), "]: [").concat(url, "] failed with ").concat(error.message);
+          var _context$metadata = context.metadata,
+              method = _context$metadata.method,
+              url = _context$metadata.url;
+          var msg = "[ApiModule] [".concat(method.toUpperCase(), " ").concat(url, "] failed with ").concat(error.message);
           console.error(new Error(msg));
         }
 
-        next(error);
+        next();
       };
 
       if (typeof hookFunction === 'function') {
-        hookFunction.call(this, apiMeta, errorWrapper, next);
+        hookFunction.call(this, context, next);
       } else {
         console.warn("[ApiModule] fallbackMiddleWare: ".concat(hookFunction, " is not a valid fallbackHook function"));
         defaultErrorHandler();
@@ -234,94 +217,113 @@ function () {
     } // tranfer single module api meta info to request
 
   }, {
-    key: "_Proxyable",
-    value: function _Proxyable(target) {
-      var target_ = {};
+    key: "_proxyable",
+    value: function _proxyable(target) {
+      var _target = {};
 
       for (var key in target) {
         if (target.hasOwnProperty(key)) {
-          target_[key] = this._ProxyApi(target, key);
+          _target[key] = this._proxyApiMetadata(target, key);
         }
       }
 
-      return target_;
+      return _target;
     } // map api meta to to request
 
   }, {
-    key: "_ProxyApi",
-    value: function _ProxyApi(target, key) {
+    key: "_proxyApiMetadata",
+    value: function _proxyApiMetadata(target, key) {
       var _this3 = this;
 
-      var metaData = target[key];
+      var metadata = target[key];
 
-      if (Object.prototype.toString.call(metaData) !== '[object Object]') {
-        throw new TypeError("Api metadata [".concat(key, "] is not an object"));
+      if (Object.prototype.toString.call(metadata) !== '[object Object]') {
+        throw new TypeError("[ApiModule] api metadata [".concat(key, "] is not an object"));
       }
 
-      var method = metaData.method,
-          url = metaData.url;
+      var context = new Context(metadata, this.options);
 
-      if (!method || !url) {
-        console.log("[ApiModule] Check your api metadata for [".concat(key, "]: "), metaData);
-        throw new Error("[ApiModule] Api metadata [".concat(key, "]: 'method' or 'url' value not found"));
+      if (!context.url || !context.method) {
+        console.warn("[ApiModule] check your api metadata for [".concat(key, "]: "), metadata);
+        throw new Error("[ApiModule] api metadata [".concat(key, "]: 'method' or 'url' value not found"));
       }
+      /**
+       * Collect errors and set errors uniformly. Returns if there is an error
+       * @param {Error|any} err
+       * @return {Boolean}
+       */
 
-      var parsedUrl = url;
+
+      var handleResponseError = function handleResponseError(err) {
+        var error = err || context.responseError;
+        if (!error) return false;
+
+        if (error instanceof Error) {
+          context.setError(error);
+        } else if (typeof error === 'string') {
+          context.setError(new Error(error));
+        } else {
+          context.setError(error);
+        }
+
+        return true;
+      };
 
       var request = function request(data) {
         var opt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+        context.setData(data)._setRequestOptions(opt);
+
         return new Promise(function (resolve, reject) {
-          // fore request task
-          _this3.foreRequestMiddleWare(metaData, data, function (err) {
-            if (err) {
-              _this3.fallbackMiddleWare(metaData, {
-                data: data,
-                error: err
-              }, reject);
-            } else {
-              var _ref3 = data || {},
-                  _ref3$query = _ref3.query,
-                  query = _ref3$query === void 0 ? {} : _ref3$query,
-                  _ref3$params = _ref3.params,
-                  params = _ref3$params === void 0 ? {} : _ref3$params,
-                  _ref3$body = _ref3.body,
-                  body = _ref3$body === void 0 ? {} : _ref3$body; // parse url
-              // handle api like /a/:id/b/{param}
-
-
-              parsedUrl = url.replace(/\B(?::(\w+)|{(\w+)})/g, function () {
-                return params[(arguments.length <= 1 ? undefined : arguments[1]) || (arguments.length <= 2 ? undefined : arguments[2])];
+          _this3.foreRequestMiddleWare(context, function (err) {
+            if (handleResponseError(err)) {
+              _this3.fallbackMiddleWare(context, function () {
+                reject(context.responseError);
               });
+            } else {
+              var _ref = context.data || {},
+                  _ref$query = _ref.query,
+                  query = _ref$query === void 0 ? {} : _ref$query,
+                  _ref$body = _ref.body,
+                  body = _ref$body === void 0 ? {} : _ref$body;
+
               var config = Object.assign({}, {
-                method: method.toLowerCase(),
-                url: parsedUrl,
+                method: context.method.toLowerCase(),
+                url: context.parsedUrl,
                 params: query,
                 data: body
-              }, opt);
+              }, context.axiosOptions);
 
               _this3.options.axios(config).then(function (res) {
-                _this3.postRequestMiddleWare(metaData, {
-                  data: data,
-                  response: res
-                }, resolve);
-              }).catch(function (err) {
-                _this3.fallbackMiddleWare(metaData, {
-                  data: data,
-                  error: err
-                }, reject);
+                context.setResponse(res);
+
+                _this3.postRequestMiddleWare(context, function (err) {
+                  if (handleResponseError(err)) {
+                    throw context.responseError;
+                  }
+
+                  resolve(context.response);
+                });
+              }).catch(function (error) {
+                handleResponseError(error);
+
+                _this3.fallbackMiddleWare(context, function (err) {
+                  handleResponseError(err);
+                  reject(context.responseError);
+                });
               });
             }
           });
         });
       };
 
-      request.meta = metaData;
+      request.context = context;
       return request;
     }
   }], [{
     key: "globalBefore",
     value: function globalBefore() {
-      var foreRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultForeRequestHook();
+      var foreRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultMiddleware;
       ApiModule.foreRequestHook = foreRequestHook;
     }
     /**
@@ -330,9 +332,9 @@ function () {
      */
 
   }, {
-    key: "globalPostRequestMiddleWare",
-    value: function globalPostRequestMiddleWare() {
-      var postRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultPostRequestHook();
+    key: "globalAfter",
+    value: function globalAfter() {
+      var postRequestHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultMiddleware;
       ApiModule.postRequestHook = postRequestHook;
     }
     /**
@@ -341,9 +343,9 @@ function () {
      */
 
   }, {
-    key: "globalFallbackMiddleWare",
-    value: function globalFallbackMiddleWare() {
-      var fallbackHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultFallbackHook();
+    key: "globalCatch",
+    value: function globalCatch() {
+      var fallbackHook = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultMiddleware;
       ApiModule.fallbackHook = fallbackHook;
     }
   }]);

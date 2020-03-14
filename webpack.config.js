@@ -1,6 +1,6 @@
-const path = require('path')
+const path = require('path');
 const webpack = require('webpack');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = {
     mode: 'production',
@@ -28,9 +28,8 @@ module.exports = {
         }),
         new UglifyJsPlugin({
             uglifyOptions: {
-                compress: {
-                    warnings: false
-                }
+                compress: {},
+                warnings: false
             },
             parallel: true
         })

@@ -29,6 +29,7 @@ export interface ApiMetadataMapper {
 export interface ApiMetadata {
     method: "get" | "post" | "patch" | "delete" | "put" | "head";
     url: string;
+    [field: string]: any
 }
 
 interface TransformedRequestData {
@@ -43,7 +44,7 @@ export type TransformedRequest = (
 ) => Promise<any>;
 
 export interface TransformedRequestMapper {
-    [metadataName: string]: TransformedRequest;
+    [requestName: string]: TransformedRequest;
 }
 
 export interface ApiModuleOptions {
@@ -70,9 +71,13 @@ declare class ApiModule {
      * Get moduled/single module namespace api map
      */
     getInstance():
-        TransformedRequestMapper
-        | {
-            $module?: ApiModule;
+        {
+            $module: ApiModule;
+            [requestName: string]: TransformedRequest;
+        }
+        |
+        {
+            $module: ApiModule;
             [namespace: string]: TransformedRequestMapper
         };
     getAxios(): AxiosInstance;
@@ -85,14 +90,14 @@ declare class Context {
     setError(error: any): Context;
     setAxiosOptions(options: AxiosRequestConfig): Context;
 
-    metadata: ApiMetadata;
-    method: string;
-    url: string;
-    parsedUrl: string;
+    readonly metadata: ApiMetadata;
+    readonly method: string;
+    readonly url: string;
+    readonly parsedUrl: string;
 
-    data: any;
-    response: any;
-    responseError: any;
+    readonly data: any;
+    readonly response: any;
+    readonly responseError: any;
 }
 
 

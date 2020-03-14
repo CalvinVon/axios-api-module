@@ -7,10 +7,12 @@ const defaultMiddleware = (context, next) => next(context.responseError);
  * Api Module class
  * 
  * @static {Function} foreRequestHook
+ * @static {Function} postRequestHook
  * @static {Function} fallbackHook
  * 
  * @member {Object} options
  * @member {Function} foreRequestHook
+ * @member {Function} postRequestHook
  * @member {Function} fallbackHook
  * 
  * @method useBefore(hook)
