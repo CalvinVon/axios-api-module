@@ -1,5 +1,7 @@
 # axios-api-module
-A business-focused modular encapsulate module based on axios. [Live demo](https://stackblitz.com/edit/test-axios-api-module) with modular file splitting.
+一个专注于业务并基于 axios 的模块化封装模块。
+
+尝试一下带有模块化文件分割的 webpack 工程化[例子](https://stackblitz.com/edit/test-axios-api-module)
 
 [![version](https://img.shields.io/npm/v/@calvin_von/axios-api-module.svg)](https://www.npmjs.com/package/@calvin_von/axios-api-module)
 [![codecov](https://codecov.io/gh/CalvinVon/axios-api-module/branch/master/graph/badge.svg)](https://codecov.io/gh/CalvinVon/axios-api-module)
@@ -13,32 +15,55 @@ A business-focused modular encapsulate module based on axios. [Live demo](https:
 [中文文档](https://github.com/CalvinVon/axios-api-module/blob/master/README_CN.md)
 
 # Table of contents
-- [Getting Started](#Getting-Started)
-    - [Install](#Install)
-    - [Typical Usage](#Typical-Usage)
-    - [Send Requests](#Send-Requests)
-    - [Intercepter](#Intercepter)
-- [Options](#Options)
-    - [`baseConfig` option](#`baseConfig`-option)
-    - [`module` option](#`module`-option)
-- [Methods](#Methods)
-    - [Static Method](#Static-Method)
-        - [`globalBefore(foreRequestHook: (apiMeta, data, next) => null)`](#globalBeforeforerequesthook-apimeta-data-next--null)
-        - [`globalPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`](#globalpostrequestmiddlewarepostrequesthook-apimeta-resWrapper-next--null)
-        - [`globalFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`](#globalfallbackmiddlewarefallbackhook-apimeta-errorWrapper-next--null)
-    - [Instance Method](#Instance-Method)
-        - [`useBefore(foreRequestHook: (apiMeta, data, next) => null)`](#useBeforeforerequesthook-apimeta-data-next--null)
-        - [`registerPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`](#registerpostrequestmiddlewarepostrequesthook-apimeta-resWrapper-next--null)
-        - [`registerFallbackMiddleWare(foreRequestHook: (apiMeta, errorWrapper, next) => null)`](#registerfallbackmiddlewarefallbackhook-apimeta-errorWrapper-next--null)
-        - [`getInstance()`](#getInstance)
-        - [`getAxios()`](#getAxios)
-        - [`generateCancellationSource()`](#generateCancellationSource)
-- [CHANGELOG](#CHANGELOG)
-- [LICENSE](#LICENSE)
+- [快速上手](#快速上手)
+    - [安装](#安装)
+    - [典型用法](#典型用法)
+    - [发送请求](#发送请求)
+    - [设置中间件](#设置中间件)
+        - [为每一个实例设置中间件](#为每一个实例设置中间件)
+        - [全局中间件](#全局中间件)
+    - [设置 axios 拦截器](#设置-axios-拦截器)
+        - [导出 axios 实例](#导出-axios-实例)
+        - [设置拦截器](#设置拦截器)
+- [选项](#选项)
+    - [baseConfig 选项](#baseConfig-选项)
+    - [module 选项](#module-选项)
+- [API 手册](#API-手册)
+    - [类 `ApiModule`](#类-`ApiModule`)
+        - [静态方法](#静态方法)
+            - [globalBefore](#globalBefore)
+            - [globalAfter](#globalAfter)
+            - [globalCatch](#globalCatch)
+        - [实例方法](#实例方法)
+            - [#useBefore](#useBefore)
+            - [#useAfter](#useAfter)
+            - [#useCatch](#useCatch)
+            - [#getInstance](#getInstance)
+            - [#getAxios](#getAxios)
+            - [generateCancellationSource](#generateCancellationSource)
+    - [类 `Context`](#类-`Context`)
+        - [只读成员](只读成员)
+            - [metadata](metadata)
+            - [method](method)
+            - [url](url)
+            - [parsedUrl](parsedUrl)
+            - [data](data)
+            - [response](response)
+            - [responseError](responseError)
+        - [实例方法](实例方法)
+            - [setData](#setData)
+            - [setResponse](#setResponse)
+            - [setError](#setError)
+            - [setAxiosOptions](#setAxiosOptions)
+- [版本变更记录](#版本变更记录)
+- [许可证](#许可证)
 
-# Getting Started
-### Install
-You can install the library via npm.
+# 快速上手
+### 安装
+使用 npm 安装
+> 需要注意：axios 库不包含其中，你需要单独安装 axios 依赖。
+
+> 为什么？这样设计便可使用户自由选择适合的 axios 版本（请遵循 [semver](https://semver.org/) 版本规则，现在支持 0.x 版本） [![axios version](https://img.shields.io/npm/v/axios?label=axios)](https://www.npmjs.org/package/axios)
 ```bash
 npm i axios @calvin_von/axios-api-module -S
 ```
@@ -49,24 +74,20 @@ yarn add axios @calvin_von/axios-api-module
 
 or via CDN
 ```html
-<!-- You need import axios separately. -->
-<script src="https://cdn.jsdelivr.net/npm/axios@0.18.0/dist/axios.min.js"></script>
+<!-- 单独引入 axios -->
+<script src="https://cdn.jsdelivr.net/npm/axios@0.19.2/dist/axios.min.js"></script>
 
-<!-- then import apiModule -->
 <script src="https://cdn.jsdelivr.net/npm/@calvin_von/axios-api-module/dist/axios-api-module.min.js"></script>
 
 ```
-### Typical Usage
+### 典型用法
 
 ```js
-// You should import axios at first
-import axios from 'axios';
-
 import ApiModule from "@calvin_von/axios-api-module";
-// or CDN import
+// 或者 CDN 导入
 // var ApiModule = window['ApiModule'];
 
-// create a modular namespace ApiModule instance
+// 当前创建一个模块化命名空间的实例
 const apiMod = new ApiModule({
     baseConfig: {
         baseURL: 'http://api.yourdomain.com',
@@ -77,42 +98,43 @@ const apiMod = new ApiModule({
         timeout: 60000
     },
     module: true,
-    apiMetas: {
+    metadatas: {
         main: {
             getList: {
-                name: 'GetMainList',
                 url: '/api/list/',
-                method: 'get'
+                method: 'get',
+                name: 'GetMainList' // 添加其他自定义字段
             }
         },
         user: {
             getInfo: {
-                name: 'getUserInfo',
-                // support multiple params definitions
-                // url: '/api/user/:uid/info',
-                url: '/api/user/{uid}/info',
                 method: 'get'
+                // 支持多种路径参数定义方式
+                url: '/api/user/{uid}/info'
+                // url: '/api/user/:uid/info'
             }
         }
     }
 });
 
-// get transformed api map instance
-const apis = apiMod.getInstance();
+// 拿到转换之后的请求实例
+const apiMapper = apiMod.getInstance();
+apiMapper.$module === apiMod;    // true
 
-apis.$module === apiMod;    // true
-
-...
+// 发送请求
+// 请求由传入的 metadatas 选项映射
+apiMapper.main.getList({ query: { pageSize: 10, pageNum: 1 } });
+apiMapper.user.getInfo({ params: { uid: 88 } });
 ```
 
-### Send Requests
-You need to call the method like this: **Request({ query: {...}, body: {...}, params: {...} }, opt?)** to send request.
+### 发送请求
+你需要这样像这样发送请求: **Request({ query: {...}, body: {...}, params: {...} }, opt?)**
 
-- **query**: The URL parameters to be sent with the request, must be a plain object or an URLSearchParams object. [axios params option](https://github.com/axios/axios#request-config)
+- **query**: The URL parameters to be sent with the request, must be a plain object or an URLSearchParams object. [axios params 选项](https://github.com/axios/axios#request-config)
 
 - **params**: Support dynamic url params(usage likes [vue-router dynamic matching](https://router.vuejs.org/guide/essentials/dynamic-matching.html))
 
-- **body**: The data to be sent as the request body. [axios data option](https://github.com/axios/axios#request-config)
+- **body**: The data to be sent as the request body. [axios data 选项](https://github.com/axios/axios#request-config)
 
 - **opt**: More original request configs available. [Request Config](https://github.com/axios/axios#request-config)
 
@@ -149,7 +171,7 @@ axios.get(`/api/user/${this.uid}/info`, {
     }
 });
 ```
-### Intercepter
+### 设置 axios 拦截器
 Register axios intercepter for **only single instance**
 
 > Execution order between `axios intercepter` and `axios-api-module middlewares`
@@ -185,7 +207,7 @@ axiosInstance.interceptors.response.use(
 );
 ```
 
-# Options
+# 选项
 ```js
 const apiMod = new ApiModule({
     baseConfig: { /*...*/ },            // Object, axios request config
@@ -203,14 +225,14 @@ const apiMod = new ApiModule({
 });
 ```
 ---
-## `baseConfig` option
+## baseConfig 选项
 
 Set base axios request config for single api module.
 
 > More details about baseConfig, see [Axios Doc(#Request Config)](https://github.com/axios/axios#request-config)
 
 
-## `module` option
+## module 选项
 
 Whether enable modular namespaces
 - `true` (default) You can use modular namespace.
@@ -252,19 +274,19 @@ Whether enable modular namespaces
   ```
 
   > Example in Vue.js:  
-    You can create multiple instance, typically when `module` option set to `false`
+    You can create multiple instance, typically when module 选项 set to `false`
 
   ```js
   Vue.prototype.$foregroundApi = foregroundApis;
   Vue.prototype.$backgroundApi = backgroundApis;
   ```
 
-# Methods
-## Static Method
-### `globalBefore(foreRequestHook: (apiMeta, data, next) => null)`
+# API
+## 静态方法
+### globalBefore
 
 - params:
-    - `apiMeta`: `apiMetas` option single meta info you passed in
+    - `apiMeta`: `apiMetas` 选项 single meta info you passed in
     - `data`: parameters passed in api method
     - `next(error?)` call `next` function to go next step.If `error` passed in, the request would be rejected.
   
@@ -281,7 +303,7 @@ Whether enable modular namespaces
     import ApiModule from "@calvin_von/axios-api-module";
 
     // For all instances
-    ApiModule.globalBefore((apiMeta, data, next) => {
+    ApiModule.globalBefore((context, next) => {
         const { name, method, url /* , or other custom fields */, schema } = apiMeta;
         
         if (schema) {
@@ -299,17 +321,17 @@ Whether enable modular namespaces
 
     const backendApi = new ApiModule({ /*...*/ });
     // Just for `backendApi`
-    backendApi.useBefore((apiMeta, data, next) => {
+    backendApi.useBefore((context, next) => {
         console.log(apiMeta)
         console.log(data)
         next();
     });
     ```
 
-### `globalPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`
+### globalAfter
 
 - params:
-    - `apiMeta`: `apiMetas` option single meta info you passed in.
+    - `apiMeta`: `apiMetas` 选项 single meta info you passed in.
     - `resWrapper`: an object includes `response` and `data` fields.
         - `response`: response data from server.
         - `data`: origin data passed in.
@@ -339,7 +361,7 @@ Whether enable modular namespaces
     ```js
     import ApiModule from "@calvin_von/axios-api-module";
 
-    ApiModule.globalPostRequestMiddleWare((apiMeta, { data, response }, next) => {
+    ApiModule.globalAfter((apiMeta, { data, response }, next) => {
         const { preProcessor } = apiMeta;
         
         if (preProcessor) {
@@ -351,12 +373,12 @@ Whether enable modular namespaces
     });
     ```
 
-### `globalFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`
+### globalCatch
   
   > NOTE: If there's no fallback middleware registered, a **default error handler** will be replaced with.
 
 - params:
-    - `apiMeta`: `apiMetas` option single meta info you passed in
+    - `apiMeta`: `apiMetas` 选项 single meta info you passed in
     - `errorWrapper`
         - `data`: origin data passed in.
         - `error`: `Error` instance.
@@ -370,7 +392,7 @@ Whether enable modular namespaces
     import ApiModule from "@calvin_von/axios-api-module";
 
     // For all instances
-    ApiModule.globalFallbackMiddleWare((apiMeta, { error }, next) => {
+    ApiModule.globalCatch((apiMeta, { error }, next) => {
         // an error must be passed in, or request would be seen as successful
         next(error);
     });
@@ -378,7 +400,7 @@ Whether enable modular namespaces
 
     const backendApi = new ApiModule({ /*...*/ });
     // Just for `backendApi`
-    backendApi.registerFallbackMiddleWare((apiMeta, { data, error }, next) => {
+    backendApi.useCatch((apiMeta, { data, error }, next) => {
         console.log(apiMeta)
         console.log(data)
         console.log(error)
@@ -387,17 +409,17 @@ Whether enable modular namespaces
     });
     ```
 
-## Instance Method
-### `useBefore(foreRequestHook: (apiMeta, data, next) => null)`
+## 实例方法
+### #useBefore
 - description: Same as static method.But **only affect single instance**.
 
-### `registerPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`
+### #useAfter
 - description: Same as static method.But **only affect single instance**.
 
-### `registerFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`
+### `useCatch(fallbackHook: (context, next) => null)`
 - description: Same as static method.But **only affect single instance**.
 
-### `getInstance()`
+### #getInstance
 - return: `TransformedApiMap | { [namespace: string]: TransformedApiMap, $module?: ApiModule };`
 - description: Get transformed api map object.
   ```js
@@ -408,7 +430,7 @@ Whether enable modular namespaces
   api.xxx({ /* `query`, `body`, `params` data here */ }, { /* Axios Request Config */ });
   ```
 
-### `getAxios()`
+### #getAxios
 - return: `AxiosInstance`
 - description: Get axios instance.
   ```js
@@ -416,7 +438,7 @@ Whether enable modular namespaces
   const axios = apiModule.getAxios();
   ```
 
-### `generateCancellationSource()`
+### generateCancellationSource
 - return: `CancelTokenSource`
 - description: Generate axios `Cancellation` source.
 
@@ -460,8 +482,8 @@ Whether enable modular namespaces
     // requestA would be rejected by reason `Canceled by the user`
     // requestB ok!
   ```
-# CHANGELOG
-[CHANGELOG](./CHANGELOG.md)
+# 版本变更记录
+[版本变更记录](./CHANGELOG.md)
 
-# LICENSE
-[MIT LICENSE](./LICENSE)
+# 许可证
+[MIT 许可证](./LICENSE)
