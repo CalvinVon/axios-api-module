@@ -1,5 +1,7 @@
 # axios-api-module
-A business-focused modular encapsulate module based on axios. [Live demo](https://stackblitz.com/edit/test-axios-api-module) with modular file splitting.
+A business-focused modular encapsulate module based on axios.
+
+Try this webpack project [example](https://stackblitz.com/edit/test-axios-api-module) with modular file splitting.
 
 [![version](https://img.shields.io/npm/v/@calvin_von/axios-api-module.svg)](https://www.npmjs.com/package/@calvin_von/axios-api-module)
 [![codecov](https://codecov.io/gh/CalvinVon/axios-api-module/branch/master/graph/badge.svg)](https://codecov.io/gh/CalvinVon/axios-api-module)
@@ -16,8 +18,17 @@ A business-focused modular encapsulate module based on axios. [Live demo](https:
 - [Getting Started](#Getting-Started)
     - [Install](#Install)
     - [Typical Usage](#Typical-Usage)
-    - [Send Requests](#Send-Requests)
-    - [Intercepter](#Intercepter)
+    - [Define request interface](#define-request-interface)
+        - [Single Namespace](#Single-Namespace)
+        - [Enable Modular Namespace](#Enable-Modular-Namespace)
+    -[Set Middleware](#Set-Middleware)
+        - [Middleware Definition](#Middleware-Definition)
+        - [Set middleware for each instance](#Set-middleware-for-each-instance)
+        - [Set global middleware](#Set-global-Middleware)
+    - [Set axios interceptor](#Set-axios-Interceptor)
+        - [Export axios instance](#Export-axios-Instance)
+        - [Execution order](#execution-order)
+        - [Set Interceptor](#Set-Interceptor)
 - [Options](#Options)
     - [`baseConfig` option](#`baseConfig`-option)
     - [`module` option](#`module`-option)
@@ -39,6 +50,7 @@ A business-focused modular encapsulate module based on axios. [Live demo](https:
 # Getting Started
 ### Install
 You can install the library via npm.
+> **Note**: the axios library is not included in the package, you need to install the axios dependency separately
 ```bash
 npm i axios @calvin_von/axios-api-module -S
 ```
@@ -52,10 +64,12 @@ or via CDN
 <!-- You need import axios separately. -->
 <script src="https://cdn.jsdelivr.net/npm/axios@0.18.0/dist/axios.min.js"></script>
 
-<!-- then import apiModule -->
 <script src="https://cdn.jsdelivr.net/npm/@calvin_von/axios-api-module/dist/axios-api-module.min.js"></script>
-
 ```
+> Why? This design allows users to freely choose the appropriate axios version (please follow the [semver](https://semver.org/) version rule, and now we supports 0.x versions) [![Axios version](https://img.shields.io/npm/v/axios?label=axios)](https://www.npmjs.org/package/axios)
+
+---
+
 ### Typical Usage
 
 ```js
@@ -77,36 +91,104 @@ const apiMod = new ApiModule({
         timeout: 60000
     },
     module: true,
-    apiMetas: {
+    metadatas: {
         main: {
             getList: {
-                name: 'GetMainList',
                 url: '/api/list/',
-                method: 'get'
+                method: 'get',
+                // Add another custom fields
+                name: 'GetMainList'
             }
         },
         user: {
             getInfo: {
-                name: 'getUserInfo',
                 // support multiple params definitions
                 // url: '/api/user/:uid/info',
                 url: '/api/user/{uid}/info',
                 method: 'get'
+                name: 'getUserInfo',
             }
         }
     }
 });
 
-// get transformed api map instance
-const apis = apiMod.getInstance();
 
-apis.$module === apiMod;    // true
+// get the converted request instance
+const apiMapper = apiMod.getInstance();
+apiMapper.$module === apiMod;    // true
 
-...
+// send request
+// apiMapper is mapped by the passed metadatas option
+apiMapper.main.getList({ query: { pageSize: 10, pageNum: 1 } });
+apiMapper.user.getInfo({ params: { uid: 88 } });
 ```
 
-### Send Requests
-You need to call the method like this: **Request({ query: {...}, body: {...}, params: {...} }, opt?)** to send request.
+---
+
+
+## Define request interface
+You need to organize the interface into an object (or objects from multiple namespaces) and pass it into the metadatas option.
+
+- ### Single namespace
+    When the number of interfaces is not large, or if you want to instantiate more than one, **set `module` to `false` or empty value**, `ApiModule` will adopt a single namespace
+    ```js
+    const apiModule = new ApiModule({
+        module: false,
+        metadatas: {
+            requestA: { url: '/path/to/a', method: 'get' },
+            requestB: { url: '/path/to/b', method: 'post' },
+        }
+        // other options...
+    });
+    ```
+    Use the [`#getInstance`](#getInstance) method to get the request collection object after conversion
+
+    ```js
+    const apiMapper = apiModule.getInstance();
+    apiMapper
+        .requestA({ query: { a: 'b' } })
+        .then(data => {...})
+        .catch(error => {...})
+    ```
+
+- ### Enable Modular Namespace
+    **When `module` is set to `true`**, `ApiModule` will enable multiple namespaces
+    ```js
+    const apiModule = new ApiModule({
+        module: true,
+        metadatas: {
+            moduleA: {
+                request: { url: '/module/a/request', method: 'get' },
+            },
+            moduleB: {
+                request: { url: '/module/b/request', method: 'post' },
+            }
+        }
+        // other options...
+    });
+
+    const apiMapper = apiModule.getInstance();
+        apiMapper
+            .moduleA
+            .request({ query: { module: 'a' } })
+            .then(data => {...})
+            .catch(error => {...})
+
+        apiMapper
+            .moduleB
+            .request({ body: { module: 'b' } })
+            .then(data => {...})
+            .catch(error => {...})
+    ```
+
+---
+
+
+## Send Requests
+To send request, you need to use the [ApiModule#getInstance](#getInstance) method to get the converted request collection object, then just like this:
+```js
+Request({ query: {...}, body: {...}, params: {...} }, opt?)
+```
 
 - **query**: The URL parameters to be sent with the request, must be a plain object or an URLSearchParams object. [axios params option](https://github.com/axios/axios#request-config)
 
@@ -117,30 +199,21 @@ You need to call the method like this: **Request({ query: {...}, body: {...}, pa
 - **opt**: More original request configs available. [Request Config](https://github.com/axios/axios#request-config)
 
 ```js
+const request = apiMapper.user.getInfo;
+
+// *configurable context parameter
+console.log(request.context);
+
 // axios origin request options
 const config = { /* Axios Request Config */ };
-const request = apis.user.getInfo;
-
-// get metadata
-console.log(request.meta);
-
-// send request
-request(
-    {
-        params: {
-            uid: this.uid
-        },
-        query: {
-            ts: Date.now()
-        }
+const requestData = {
+    params: {
+        uid: this.uid
     },
-    config
-).then(function() {
-
-})
-.catch(function(err) {
-
-})
+    query: {
+        ts: Date.now()
+    }
+};
 
 // is equal to
 axios.get(`/api/user/${this.uid}/info`, {
@@ -149,7 +222,11 @@ axios.get(`/api/user/${this.uid}/info`, {
     }
 });
 ```
-### Intercepter
+
+---
+
+
+## Intercepter
 Register axios intercepter for **only single instance**
 
 > Execution order between `axios intercepter` and `axios-api-module middlewares`

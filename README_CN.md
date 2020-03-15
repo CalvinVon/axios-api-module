@@ -1,5 +1,5 @@
 # axios-api-module
-一个专注于业务并基于 axios 的模块化封装模块。
+一个专注于业务并基于 [axios](https://github.com/axios/axios) 的模块化封装模块。
 
 尝试一下带有模块化文件分割的 webpack 工程化[例子](https://stackblitz.com/edit/test-axios-api-module)
 
@@ -14,16 +14,21 @@
 |
 [中文文档](https://github.com/CalvinVon/axios-api-module/blob/master/README_CN.md)
 
-# Table of contents
+# 目录
 - [快速上手](#快速上手)
     - [安装](#安装)
     - [典型用法](#典型用法)
+    - [定义请求接口](#定义请求接口)
+        - [单个命名空间](#单个命名空间)
+        - [启用模块化命名空间](#启用模块化命名空间)
     - [发送请求](#发送请求)
     - [设置中间件](#设置中间件)
+        - [中间件定义](#中间件定义)
         - [为每一个实例设置中间件](#为每一个实例设置中间件)
         - [全局中间件](#全局中间件)
     - [设置 axios 拦截器](#设置-axios-拦截器)
         - [导出 axios 实例](#导出-axios-实例)
+        - [执行顺序](#执行顺序)
         - [设置拦截器](#设置拦截器)
 - [选项](#选项)
     - [baseConfig 选项](#baseConfig-选项)
@@ -40,7 +45,7 @@
             - [#useCatch](#useCatch)
             - [#getInstance](#getInstance)
             - [#getAxios](#getAxios)
-            - [generateCancellationSource](#generateCancellationSource)
+            - [#generateCancellationSource](#generateCancellationSource)
     - [类 `Context`](#类-`Context`)
         - [只读成员](只读成员)
             - [metadata](metadata)
@@ -59,40 +64,43 @@
 - [许可证](#许可证)
 
 # 快速上手
-### 安装
+## 安装
 使用 npm 安装
-> 需要注意：axios 库不包含其中，你需要单独安装 axios 依赖。
+> **注意**：axios 库并不会包含在发布包中，你需要单独安装 axios 依赖
 
-> 为什么？这样设计便可使用户自由选择适合的 axios 版本（请遵循 [semver](https://semver.org/) 版本规则，现在支持 0.x 版本） [![axios version](https://img.shields.io/npm/v/axios?label=axios)](https://www.npmjs.org/package/axios)
 ```bash
 npm i axios @calvin_von/axios-api-module -S
 ```
-or via yarn:
+或者使用 yarn 安装:
 ```bash
 yarn add axios @calvin_von/axios-api-module
 ```
 
-or via CDN
+或者直接 CDN 方式引入：
 ```html
 <!-- 单独引入 axios -->
 <script src="https://cdn.jsdelivr.net/npm/axios@0.19.2/dist/axios.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@calvin_von/axios-api-module/dist/axios-api-module.min.js"></script>
-
 ```
-### 典型用法
+
+> 为什么？这样设计便可使用户自由选择适合的 axios 版本（请遵循 [semver](https://semver.org/) 版本规则，现在支持 0.x 版本） [![axios version](https://img.shields.io/npm/v/axios?label=axios)](https://www.npmjs.org/package/axios)
+
+---
+
+## 典型用法
 
 ```js
 import ApiModule from "@calvin_von/axios-api-module";
 // 或者 CDN 导入
 // var ApiModule = window['ApiModule'];
 
-// 当前创建一个模块化命名空间的实例
+// 创建一个模块化命名空间的实例
 const apiMod = new ApiModule({
     baseConfig: {
         baseURL: 'http://api.yourdomain.com',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            'Content-Type': 'application/json; charset=UTF-8'
         },
         withCredentials: true,
         timeout: 60000
@@ -103,7 +111,8 @@ const apiMod = new ApiModule({
             getList: {
                 url: '/api/list/',
                 method: 'get',
-                name: 'GetMainList' // 添加其他自定义字段
+                // 添加其他自定义字段
+                name: 'GetMainList'
             }
         },
         user: {
@@ -122,66 +131,223 @@ const apiMapper = apiMod.getInstance();
 apiMapper.$module === apiMod;    // true
 
 // 发送请求
-// 请求由传入的 metadatas 选项映射
+// apiMapper 由传入的 metadatas 选项映射
 apiMapper.main.getList({ query: { pageSize: 10, pageNum: 1 } });
 apiMapper.user.getInfo({ params: { uid: 88 } });
 ```
 
-### 发送请求
-你需要这样像这样发送请求: **Request({ query: {...}, body: {...}, params: {...} }, opt?)**
+---
 
-- **query**: The URL parameters to be sent with the request, must be a plain object or an URLSearchParams object. [axios params 选项](https://github.com/axios/axios#request-config)
+## 定义请求接口
+你需要将接口组织成一个对象（或者由多个命名空间的对象）传入 `metadatas` 选项中
 
-- **params**: Support dynamic url params(usage likes [vue-router dynamic matching](https://router.vuejs.org/guide/essentials/dynamic-matching.html))
+- ### 单个命名空间
+    当接口数目不多，或者希望实例化多个时，**将 `module` 设置成 `false` 或空值**，`ApiModule` 会采用单个命名空间
+    ```js
+    const apiModule = new ApiModule({
+        module: false,
+        metadatas: {
+            requestA: { url: '/path/to/a', method: 'get' },
+            requestB: { url: '/path/to/b', method: 'post' },
+        }
+        // other options...
+    });
+    ```
+    使用 [`#getInstance`](#getInstance) 方法来获得转换之后的请求集合对象
+    ```js
+    const apiMapper = apiModule.getInstance();
+    apiMapper
+        .requestA({ query: { a: 'b' } })
+        .then(data => {...})
+        .catch(error => {...})
+    ```
 
-- **body**: The data to be sent as the request body. [axios data 选项](https://github.com/axios/axios#request-config)
+- ### 启用模块化命名空间
+    **将 `module` 设置为 `true` 时**， `ApiModule` 会启用多个命名空间
+    ```js
+    const apiModule = new ApiModule({
+        module: true,
+        metadatas: {
+            moduleA: {
+                request: { url: '/module/a/request', method: 'get' },
+            },
+            moduleB: {
+                request: { url: '/module/b/request', method: 'post' },
+            }
+        }
+        // other options...
+    });
 
-- **opt**: More original request configs available. [Request Config](https://github.com/axios/axios#request-config)
+    const apiMapper = apiModule.getInstance();
+        apiMapper
+            .moduleA
+            .request({ query: { module: 'a' } })
+            .then(data => {...})
+            .catch(error => {...})
+
+        apiMapper
+            .moduleB
+            .request({ body: { module: 'b' } })
+            .then(data => {...})
+            .catch(error => {...})
+    ```
+
+---
+
+## 发送请求
+使用 [ApiModule#getInstance](#getInstance) 方法来获得转换之后的请求集合对象，然后你需要像这样来发送一个请求: 
+```js
+Request({ query: {...}, body: {...}, params: {...} }, opt?)
+```
+
+- **query**:
+    与请求一起发送的 URL 参数。必须是一个普通对象或 `URLSearchParams` 对象。在 axios 上 [查看  params 选项](https://github.com/axios/axios#request-config)
+
+- **params**:
+    支持动态 URL 参数 (用法类似于 vue-router 的 [动态匹配](https://router.vuejs.org/guide/essentials/dynamic-matching.html))
+
+- **body**:
+    要作为请求体正文发送的数据。在 axios 上 [查看 data 选项](https://github.com/axios/axios#request-config)
+
+- **opt**:
+    提供更多 axios 原始请求配置。在 axios 上 [查看 Request Config](https://github.com/axios/axios#request-config)
 
 ```js
+const request = apiMapper.user.getInfo;
+
+// *可以配置 context 参数
+console.log(request.context);
+
 // axios origin request options
 const config = { /* Axios Request Config */ };
-const request = apis.user.getInfo;
-
-// get metadata
-console.log(request.meta);
-
-// send request
-request(
-    {
-        params: {
-            uid: this.uid
-        },
-        query: {
-            ts: Date.now()
-        }
+const requestData = {
+    params: {
+        uid: this.uid
     },
-    config
-).then(function() {
+    query: {
+        ts: Date.now()
+    }
+};
 
-})
-.catch(function(err) {
+// 发送请求
+request(requestData, config)
+    .then(data => {...})
+    .catch(error => {...})
 
-})
-
-// is equal to
+// 与下列直接使用 axios 的代码执行效果一致
 axios.get(`/api/user/${this.uid}/info`, {
     query: {
         ts: Date.now()
     }
 });
 ```
-### 设置 axios 拦截器
-Register axios intercepter for **only single instance**
 
-> Execution order between `axios intercepter` and `axios-api-module middlewares`
-> 1. fore-request middleware
-> 2. axios request intercepter
-> 3. axios response intercepter
-> 4. post-request or fallback middleware
+---
 
-> We suggest that you'd better put *business code* in request middlewares.
+## 设置中间件
+`ApiModule` 拥有中间件机制，围绕请求的**请求前**、**请求后**和**请求失败**阶段设计了更细粒度的统一控制，以帮助开发者更好地组织代码
 
+推荐的方式是，在定义接口的 *metadata* 中定义自定义字段，然后在对应的中间件内获取并执行一定操作。
+
+下面是一个在发起请求前添加用户信息参数并在请求成功后预处理数据的例子：
+```js
+const userId = getUserIdSomehow();
+const userToken = getUserTokenSomehow();
+
+apiModule.useBefore((context, next) => {
+    const { appendUserId, /** 其他自定义字段 */ } = context.metadata;
+
+    if (appendUserId) {
+        const data = context.data || {};
+        if (data.query) {
+            data.query.uid = userId;
+        }
+        context.setData(data);
+        context.setAxiosOptions({
+            headers: {
+                'Authorization': token
+            }
+        });
+    }
+
+    next();     // next 函数必须要被调用
+});
+
+apiModule.useAfter((context, next) => {
+    const responseData = context.response;
+    const { preProcessor, /** 其他自定义字段 */ } = context.metadata;
+    if (preProcessor) {
+        try {
+            context.setResponse(preProcessor(responseData));
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    next();
+});
+```
+
+
+> 事实上，`ApiModule` 的设计初衷，是避免编写重复臃肿的代码，从而分离出业务代码。
+
+> 而且 `ApiModule` 将 `axios` 提供的**拦截器**视为封装浏览器请求的“底层”层面事务，抽离出中间件模式来处理**业务层面**的事务，你可以把每一个接口定义当做是数据源服务（就像是 Angular 里面的“Service”概念），你可以做一些与页面无关的操作，故称之为“*一个专注于业务的封装模块*”。
+
+
+### 中间件定义
+- 类型： `(context, next) => null`
+- 参数：
+
+    每个中间件均包含两个参数：
+    - `context`
+
+        - 类型：[Context](#类-`Context`) 
+        - 描述：提供一系列方法来修改包括请求的参数、响应的数据、错误数据以及请求的 axios 选项，并提供一系列请求相关的只读参数。
+
+    - `next`
+        - 类型：`(error?: object|string|Error) => null`
+        - 描述：
+            - 每个中间件必须调用 `next` 函数来进入到下一步。
+            - 传入错误参数将导致请求失败（在前置中间件将不会发送真实请求且直接导致请求 `rejected`）。
+            - 使用 [Context#setError](#setError) 方法传入错误参数和在 `next` 函数传入的参数行为一致。
+
+
+### 为每一个实例设置中间件
+多个 `ApiModule` 实例之间不互相影响，**实例单独设置的中间件会覆盖全局设置的中间件**
+
+- 设置请求前置中间件：[ApiModule#useBefore](#useBefore)
+- 设置请求后置中间件：[ApiModule#useAfter](#useAfter)
+- 设置请求失败中间件：[ApiModule#useCatch](#useCatch)
+
+
+### 全局中间件
+设置全局中间件，将会**影响之后所有**创建的 `ApiModule` 实例
+
+- 设置请求前置中间件：[ApiModule.globalBefore](#globalBefore)
+- 设置请求后置中间件：[ApiModule.globalAfter](#globalAfter)
+- 设置请求失败中间件：[ApiModule.globalCatch](#globalCatch)
+
+
+---
+
+## 设置 axios 拦截器
+你仍然可以设置 axios 的拦截器，使用 `ApiModule` 并不会影响到原来的拦截器用法
+
+### 导出 axios 实例
+你可以使用 [ApiModule#getAxios](#getAxios) 方法导出 axios 实例来设置拦截器
+
+
+### 执行顺序
+> 理清 `axios 拦截器` 和 `ApiModule 中间件` 之间的执行顺序
+> 1. 请求前置中间件
+> 2. axios 请求拦截器
+> 3. axios 响应拦截器
+> 4. 请求后置或者失败中间件
+
+可以看出，对于我们的业务 `axios` 的执行更加的“底层”一些，所以我们建议**业务相关**的代码放在中间件中实现，而拦截器*仅仅来判断请求发送成功与否或者实现一些协议、框架相关的事务*。
+
+
+### 设置拦截器
 ```js
 const axiosInstance = apiMod.getAxios();
 
@@ -210,71 +376,32 @@ axiosInstance.interceptors.response.use(
 # 选项
 ```js
 const apiMod = new ApiModule({
-    baseConfig: { /*...*/ },            // Object, axios request config
-    module: true,                       // Boolean, whether modular namespace
-    console: true,                      // Boolean, switch log on off
+    baseConfig: { /*...*/ },            // Object, axios 请求的选项参数
+    module: true,                       // Boolean, 是否启用模块化命名空间
+    console: true,                      // Boolean, 是否启用请求失败日志
     apiMetas: {
-        main: {                         // namespace module
+        main: {                         // 命名空间
             getList: {
-                name: 'get list',       // request name
-                method: 'get',          // request method "get" | "post" | "patch" | "delete" | "put" | "head"
-                url: '/api/user/list'
+                method: 'get',          // 请求方式 "get" | "post" | "patch" | "delete" | "put" | "head"
+                url: '/api/user/list'   // 请求路径
             }
         }
     }
 });
 ```
 ---
+
 ## baseConfig 选项
 
-Set base axios request config for single api module.
-
-> More details about baseConfig, see [Axios Doc(#Request Config)](https://github.com/axios/axios#request-config)
+设置 axios 的请求选项参数。查看 [Axios 文档 (#Request Config)](https://github.com/axios/axios#request-config)
 
 
 ## module 选项
 
-Whether enable modular namespaces
-- `true` (default) You can use modular namespace.
-  ```js
-  const apiMod = new ApiModule({
-    module: true,
-    apiMetas: {
-        main: {
-            getList: {
-                name: 'GetMainList',
-                url: '/api/list/',
-                method: 'get'
-            }
-        },
-    }
-  });
+是否启用命名空间，[了解更多](#定义请求接口)。
 
-  // use
-  const api = apiMod.getInstance();
-  api.main.getList({ query: { sort: -1 } });
-  ```
-- `false` single namespace
-
-  ```js
-  const apiMod = new ApiModule({
-    module: false,
-    apiMetas: {
-        getList: {
-            name: 'GetMainList',
-            url: '/api/list/',
-            method: 'get'
-        }
-    }
-  });
-
-  // use
-  const api = apiMod.getInstance();
-  api.getList({ query: { sort: -1 } });
-  ```
-
-  > Example in Vue.js:  
-    You can create multiple instance, typically when module 选项 set to `false`
+  > 在使用 Vue.js 的一个例子：
+    你可以创建多个 `ApiModule` 的实例， 尤其是当 `module` 选项置为 `false` 值时
 
   ```js
   Vue.prototype.$foregroundApi = foregroundApis;
@@ -284,165 +411,70 @@ Whether enable modular namespaces
 # API
 ## 静态方法
 ### globalBefore
-
-- params:
-    - `apiMeta`: `apiMetas` 选项 single meta info you passed in
-    - `data`: parameters passed in api method
-    - `next(error?)` call `next` function to go next step.If `error` passed in, the request would be rejected.
-  
-- description:
-
-  Register fore-request middle ware function. **Affect all instances**.
-  You can do every thing here, for example, validate data schema before every request.
-
-  > The following code used a simple validate tool, [obeyman(Calvin/Obeyman)](https://github.com/CalvinVon/Obeyman), to validate data.
-
-    ```js
-    // e.g. import a simple data validator ()
-    import Obeyman from 'obeyman';
-    import ApiModule from "@calvin_von/axios-api-module";
-
-    // For all instances
-    ApiModule.globalBefore((context, next) => {
-        const { name, method, url /* , or other custom fields */, schema } = apiMeta;
-        
-        if (schema) {
-            Obeyman.validate(data, schema, (err, stack) => {
-                if (err) {
-                    console.warn(`Api [${name}] validate failed\n`, stack);
-                }
-            });
-        }
-
-        // `next` function must be called
-        next();
-    });
-
-
-    const backendApi = new ApiModule({ /*...*/ });
-    // Just for `backendApi`
-    backendApi.useBefore((context, next) => {
-        console.log(apiMeta)
-        console.log(data)
-        next();
-    });
-    ```
+设置请求前置中间件，和 [#useBefore](#useBefore) 定义一致，但会被实例方法覆盖，且会影响生成的全部 `ApiModule` 实例
 
 ### globalAfter
-
-- params:
-    - `apiMeta`: `apiMetas` 选项 single meta info you passed in.
-    - `resWrapper`: an object includes `response` and `data` fields.
-        - `response`: response data from server.
-        - `data`: origin data passed in.
-    - `next(res)` call `next` function to go next step. A `res` parameter should be passed in.
-  
-- description:
-
-  Register post-request middle ware function. **Affect all instances**.
-  > You can do something like a pre-process for data.
-
-    ```js
-    // user.api.js
-    export default {
-        list: {
-            name: 'user list',
-            method: 'get',
-            preProcessor(users) {
-                return users.map(user => {
-                    user.age++;
-                    return user;
-                });
-            }
-        }
-    }
-    ```
-
-    ```js
-    import ApiModule from "@calvin_von/axios-api-module";
-
-    ApiModule.globalAfter((apiMeta, { data, response }, next) => {
-        const { preProcessor } = apiMeta;
-        
-        if (preProcessor) {
-            next(preProcessor(response));
-        }
-        else {
-            next(response);
-        }
-    });
-    ```
+设置请求后置中间件，和 [#useAfter](#useAfter) 定义一致，但会被实例方法覆盖，且会影响生成的全部 `ApiModule` 实例
 
 ### globalCatch
-  
-  > NOTE: If there's no fallback middleware registered, a **default error handler** will be replaced with.
-
-- params:
-    - `apiMeta`: `apiMetas` 选项 single meta info you passed in
-    - `errorWrapper`
-        - `data`: origin data passed in.
-        - `error`: `Error` instance.
-    - `next(error)` call `next` function to go next step
-
-- description:
-
-    Register fallback middle ware function.Called when error occurred. **Affect all instances**
-
-    ```js
-    import ApiModule from "@calvin_von/axios-api-module";
-
-    // For all instances
-    ApiModule.globalCatch((apiMeta, { error }, next) => {
-        // an error must be passed in, or request would be seen as successful
-        next(error);
-    });
-
-
-    const backendApi = new ApiModule({ /*...*/ });
-    // Just for `backendApi`
-    backendApi.useCatch((apiMeta, { data, error }, next) => {
-        console.log(apiMeta)
-        console.log(data)
-        console.log(error)
-        // pass in custom error
-        next(new Error('Anther error'));
-    });
-    ```
+设置请求失败中间件，和 [#useCatch](#useCatch) 定义一致，但会被实例方法覆盖，且会影响生成的全部 `ApiModule` 实例
 
 ## 实例方法
 ### #useBefore
-- description: Same as static method.But **only affect single instance**.
+- 参数： `foreRequestHook: (context, next) => null)` 查看 [中间件定义](#中间件定义)
+- 描述
+
+    传入的**前置中间件**会**在每个请求前被调用**，可使用且有效的 `context` 方法如下：
+    - [context#setData](#setData) 设置请求数据
+    - [context#setError](#setError) 设置请求错误
+    - [context#setAxiosOptions](#setAxiosOptions) 设置请求的 axios 选项
+
+    若在此时设置错误参数，则会导致真实请求不会被发送，直接进入请求失败阶段
 
 ### #useAfter
-- description: Same as static method.But **only affect single instance**.
+- 参数： `postRequestHook: (context, next) => null)` 查看 [中间件定义](#中间件定义)
+- 描述
 
-### `useCatch(fallbackHook: (context, next) => null)`
-- description: Same as static method.But **only affect single instance**.
+    传入的**后置中间件**会**在每个请求成功后被调用**，可使用且有效的 `context` 方法如下：
+    - [context#setResponse](#setData) 设置请求响应
+    - [context#setError](#setError) 设置请求错误
+
+    若在此时设置错误参数，即使请求成功，该请求也将进入请求失败阶段
+
+### #useCatch
+- 参数： `fallbackHook: (context, next) => null)` 查看 [中间件定义](#中间件定义)
+- 描述
+
+    传入的**失败中间件**会**在每个请求失败（或者设定错误）后被调用**，可使用且有效的 `context` 方法如下：
+    - [context#setError](#setError) 设置请求错误
+
+    若在此时设置错误参数，会覆盖原始的错误值
 
 ### #getInstance
-- return: `TransformedApiMap | { [namespace: string]: TransformedApiMap, $module?: ApiModule };`
-- description: Get transformed api map object.
+- 返回：`TransformedRequestMapper | { [namespace: string]: TransformedRequestMapper, $module?: ApiModule };`
+- 描述：获取到映射后的请求集合对象
   ```js
   const apiModule = new ApiModule({ /*...*/ });
-  const api = apiModule.getInstance();
+  const apiMapper = apiModule.getInstance();
 
-  // Send a request
-  api.xxx({ /* `query`, `body`, `params` data here */ }, { /* Axios Request Config */ });
+  apiMapper.xxx({ /* `query`, `body`, `params` data here */ }, { /* Axios Request Config */ });
   ```
 
 ### #getAxios
-- return: `AxiosInstance`
-- description: Get axios instance.
+- 返回：`AxiosInstance`
+- 描述： 获取设置完 `baseConfig` 过后的 axios 实例
   ```js
   const apiModule = new ApiModule({ /*...*/ });
   const axios = apiModule.getAxios();
+
+  axios.get('/other/path', { /* Axios Request Config */ });
   ```
 
-### generateCancellationSource
-- return: `CancelTokenSource`
-- description: Generate axios `Cancellation` source.
+### #generateCancellationSource
+- 返回：`CancelTokenSource`
+- 描述：生成 axios `Cancellation` source.
 
-  You can use axios `cancellation`, ([docs about axios#cancellation](https://github.com/axios/axios#cancellation))
+  你可以直接使用 axios 的 `HTTP cancellation`, 查看（[axios#cancellation 的文档](https://github.com/axios/axios#cancellation)）
   ```js
   import axios from 'axios';
 
@@ -452,7 +484,7 @@ Whether enable modular namespaces
   ...
   ```
 
-  or just use `#generateCancellationSource()`
+  或者调用 `ApiModule#generateCancellationSource()`
   ```js
     ...
     
@@ -460,7 +492,7 @@ Whether enable modular namespaces
     const cancelSourceA = api.$module.generateCancellationSource();
     const cancelSourceB = api.$module.generateCancellationSource();
 
-    // send a request
+    // 发送请求
     const requestA = api.test({
         query: {
             a: 123
@@ -477,11 +509,13 @@ Whether enable modular namespaces
         cancelToken: cancelSourceB.token
     });
 
-    cancelSourceA.cancel('Canceled by the user');
+    cancelSourceA.cancel('用户主动取消');
 
-    // requestA would be rejected by reason `Canceled by the user`
-    // requestB ok!
+    // requestA 将会是 rejected 状态，错误原因是 `用户主动取消`
+    // requestB 正常发送!
   ```
+---
+
 # 版本变更记录
 [版本变更记录](./CHANGELOG.md)
 
