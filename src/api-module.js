@@ -43,6 +43,14 @@ export default class ApiModule {
             baseConfig = {},
         } = config;
 
+        this.options = {
+            axios: axios.create(baseConfig),
+            metadatas,
+            module: modularNsp,
+            console: useConsole,
+            baseConfig
+        };
+
         this.apiMapper = {};
 
         if (modularNsp) {
@@ -62,14 +70,6 @@ export default class ApiModule {
             writable: false,
             value: this
         });
-
-        this.options = {
-            axios: axios.create(baseConfig),
-            metadatas,
-            module: modularNsp,
-            console: useConsole,
-            baseConfig
-        };
     }
 
 
@@ -276,7 +276,7 @@ export default class ApiModule {
                             {},
                             {
                                 method: context.method.toLowerCase(),
-                                url: context.parsedUrl,
+                                url: context.url,
                                 params: query,
                                 data: body,
                             },

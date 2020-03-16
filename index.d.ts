@@ -92,12 +92,14 @@ declare class Context {
 
     readonly metadata: ApiMetadata;
     readonly method: string;
+    readonly baseURL: string;
     readonly url: string;
-    readonly parsedUrl: string;
 
     readonly data: any;
     readonly response: any;
     readonly responseError: any;
+
+    readonly axiosOptions: AxiosRequestConfig | object;
 }
 
 

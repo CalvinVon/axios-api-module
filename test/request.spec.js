@@ -100,6 +100,7 @@ describe('api metadata mapper', () => {
             server.on('close', () => {
                 done();
             });
+            console.log(req.url);
             expect(req.url).to.be.equal(`/api/${id}/${time}/info?o=calvin&v=von`);
             server.close();
         });

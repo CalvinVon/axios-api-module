@@ -53,6 +53,13 @@ var ApiModule = /*#__PURE__*/function () {
         useConsole = _config$console === void 0 ? true : _config$console,
         _config$baseConfig = config.baseConfig,
         baseConfig = _config$baseConfig === void 0 ? {} : _config$baseConfig;
+    this.options = {
+      axios: axios.create(baseConfig),
+      metadatas: metadatas,
+      module: modularNsp,
+      console: useConsole,
+      baseConfig: baseConfig
+    };
     this.apiMapper = {};
 
     if (modularNsp) {
@@ -71,13 +78,6 @@ var ApiModule = /*#__PURE__*/function () {
       writable: false,
       value: this
     });
-    this.options = {
-      axios: axios.create(baseConfig),
-      metadatas: metadatas,
-      module: modularNsp,
-      console: useConsole,
-      baseConfig: baseConfig
-    };
   }
   /**
    * Register Globally Fore-Request MiddleWare Globally (For All Instance)
@@ -289,7 +289,7 @@ var ApiModule = /*#__PURE__*/function () {
 
               var config = Object.assign({}, {
                 method: context.method.toLowerCase(),
-                url: context.parsedUrl,
+                url: context.url,
                 params: query,
                 data: body
               }, context.axiosOptions);

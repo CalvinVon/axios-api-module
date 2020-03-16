@@ -21,10 +21,11 @@ Try this webpack project [example](https://stackblitz.com/edit/test-axios-api-mo
     - [Define request interface](#define-request-interface)
         - [Single Namespace](#Single-Namespace)
         - [Enable Modular Namespace](#Enable-Modular-Namespace)
-    -[Set Middleware](#Set-Middleware)
+    - [Send Requests](#Send-Requests)
+    - [Set Middlewares](#Set-Middlewares)
         - [Middleware Definition](#Middleware-Definition)
-        - [Set middleware for each instance](#Set-middleware-for-each-instance)
-        - [Set global middleware](#Set-global-Middleware)
+        - [Set middlewares for each instance](#Set-middlewares-for-each-instance)
+        - [Set global middlewares](#Set-global-Middlewares)
     - [Set axios interceptor](#Set-axios-Interceptor)
         - [Export axios instance](#Export-axios-Instance)
         - [Execution order](#execution-order)
@@ -32,18 +33,33 @@ Try this webpack project [example](https://stackblitz.com/edit/test-axios-api-mo
 - [Options](#Options)
     - [`baseConfig` option](#`baseConfig`-option)
     - [`module` option](#`module`-option)
-- [Methods](#Methods)
-    - [Static Method](#Static-Method)
-        - [`globalBefore(foreRequestHook: (apiMeta, data, next) => null)`](#globalBeforeforerequesthook-apimeta-data-next--null)
-        - [`globalPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`](#globalpostrequestmiddlewarepostrequesthook-apimeta-resWrapper-next--null)
-        - [`globalFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`](#globalfallbackmiddlewarefallbackhook-apimeta-errorWrapper-next--null)
-    - [Instance Method](#Instance-Method)
-        - [`useBefore(foreRequestHook: (apiMeta, data, next) => null)`](#useBeforeforerequesthook-apimeta-data-next--null)
-        - [`registerPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`](#registerpostrequestmiddlewarepostrequesthook-apimeta-resWrapper-next--null)
-        - [`registerFallbackMiddleWare(foreRequestHook: (apiMeta, errorWrapper, next) => null)`](#registerfallbackmiddlewarefallbackhook-apimeta-errorWrapper-next--null)
-        - [`getInstance()`](#getInstance)
-        - [`getAxios()`](#getAxios)
-        - [`generateCancellationSource()`](#generateCancellationSource)
+- [API Reference](#API-Reference)
+    - [class `ApiModule`](#class-`ApiModule`)
+        - [Static Method](#Static-Method)
+            - [globalBefore](#globalBefore)
+            - [globalAfter](#globalAfter)
+            - [globalCatch](#globalCatch)
+        - [Instance Method](#Instance-Method)
+            - [#useBefore](#useBefore)
+            - [#useAfter](#useAfter)
+            - [#useCatch](#useCatch)
+            - [#getInstance](#getInstance)
+            - [#getAxios](#getAxios)
+            - [#generateCancellationSource](#generateCancellationSource)
+    - [class `Context`](#class-`Context`)
+        - [Read-only Members](#Read-only-Members)
+            - [metadata](#metadata)
+            - [method](#method)
+            - [baseURL](#baseURL)
+            - [url](#url)
+            - [data](#data)
+            - [response](#response)
+            - [responseError](#responseError)
+        - [Instance Method](#Instance-Method)
+            - [setData](#setData)
+            - [setResponse](#setResponse)
+            - [setError](#setError)
+            - [setAxiosOptions](#setAxiosOptions)
 - [CHANGELOG](#CHANGELOG)
 - [LICENSE](#LICENSE)
 
@@ -223,19 +239,116 @@ axios.get(`/api/user/${this.uid}/info`, {
 });
 ```
 
+In addition, each converted request has a `context` parameter, which is convenient for setting various parameters of the request outside the middleware
+```js
+const context = Request.context;
+context.setAxoisOptions({ ... });
+```
+
 ---
 
 
-## Intercepter
-Register axios intercepter for **only single instance**
+## Set Intercepters
+`ApiModule` has a middleware mechanism, designed more fine-grained unified control around the requested **before request**, **post request**, and**request failed** stages to help developers better organize code
 
-> Execution order between `axios intercepter` and `axios-api-module middlewares`
+The recommended way is to define a custom field in the *metadata* that defines the interface, and then get and perform a certain operation in the corresponding middleware.
+
+The following is an example of adding user information parameters before making a request and preprocessing the data after the request is successful:
+
+```js
+const userId = getUserIdSomehow();
+const userToken = getUserTokenSomehow();
+
+apiModule.useBefore((context, next) => {
+    const { appendUserId, /** other custom fields */ } = context.metadata;
+
+    if (appendUserId) {
+        const data = context.data || {};
+        if (data.query) {
+            data.query.uid = userId;
+        }
+        context.setData(data);
+        context.setAxiosOptions({
+            headers: {
+                'Authorization': token
+            }
+        });
+    }
+
+    next();     // next must be called
+});
+
+apiModule.useAfter((context, next) => {
+    const responseData = context.response;
+    const { preProcessor, /** other custom fields */ } = context.metadata;
+    if (preProcessor) {
+        try {
+            context.setResponse(preProcessor(responseData));
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    next();
+});
+```
+
+> In fact, `ApiModule` was originally designed to avoid writing bloated code repeatedly, thereby separating business code.
+
+> Moreover, `ApiModule` regards the interceptor provided by the axios as the "low-level" level affairs that encapsulates the browser request, also, `ApiModule` designs the middleware pattern to handle the "**business level**" affairs. In fact, you can put each interface definition is treated as a data source service (something like the "Service" concept in Angular), and you can do some operations that are not related to the page, so it is called "*a business-focused packaging module*".
+
+### Middleware definition
+- Type: `(context, next) => null`
+- Parameters:
+
+    Each middleware contains two parameters:
+    - `context`
+        - Type: [Context](#class-Context)
+        - Description: Provides a series of methods to modify request parameters, response data, error data, and request axios options, and provides a series of request-related read-only parameters.
+
+    - `next`
+        - Type: `(error?: object | string | Error) => null`
+        - Description:
+            - Each middleware must call the `next` function to proceed to the next step.
+            - Passing the error parameters will cause the request to fail (the browser will not send a real request and will directly cause the request to be rejected in the fore-request middleware).
+            - Passing the error parameters using the [Context#setError](#setError) method behaves the same as the parameters passed in the `next` function.
+
+### Set middlewares for each instance
+Multiple `ApiModule` instances do not affect each other. **Middleware set separately by the instance will override globally set middleware**
+
+- Set the fore-request middleware: [ApiModule#useBefore](#useBefore)
+- Set the post-request middleware: [ApiModule#useAfter](#useAfter)
+- Set the request failed middleware: [ApiModule#useCatch](#useCatch)
+
+
+### Global middlewares
+Setting the global middlewares will affect all `ApiModule` instances created later
+
+- Set the fore-request middleware: [ApiModule.globalBefore](#globalBefore)
+- Set the post-request middleware: [ApiModule.globalAfter](#globalAfter)
+- Set the request failed middleware: [ApiModule.globalCatch](#globalCatch)
+
+---
+
+## Setting up axios interceptor
+You can still set axios interceptors. Using `ApiModule` will not affect the original interceptor usage.
+
+### Export axios instance
+You can use the [ApiModule#getAxios](#getAxios) method to export the `axios` instance to set the interceptor
+
+
+### Execution order
+
+> Execution order between `axios intercepters` and `ApiModule middlewares`
 > 1. fore-request middleware
 > 2. axios request intercepter
 > 3. axios response intercepter
 > 4. post-request or fallback middleware
 
-> We suggest that you'd better put *business code* in request middlewares.
+It can be seen that the execution of our business `axios` is more "underlying", so we recommend that **business-related** code be implemented in the middleware, and the interceptor *is only to determine whether the request is sent successfully or implements some protocol and framework related affairs*.
+
+
+### Set interceptor
 
 ```js
 const axiosInstance = apiMod.getAxios();
@@ -268,10 +381,9 @@ const apiMod = new ApiModule({
     baseConfig: { /*...*/ },            // Object, axios request config
     module: true,                       // Boolean, whether modular namespace
     console: true,                      // Boolean, switch log on off
-    apiMetas: {
+    metadatas: {
         main: {                         // namespace module
             getList: {
-                name: 'get list',       // request name
                 method: 'get',          // request method "get" | "post" | "patch" | "delete" | "put" | "head"
                 url: '/api/user/list'
             }
@@ -289,44 +401,7 @@ Set base axios request config for single api module.
 
 ## `module` option
 
-Whether enable modular namespaces
-- `true` (default) You can use modular namespace.
-  ```js
-  const apiMod = new ApiModule({
-    module: true,
-    apiMetas: {
-        main: {
-            getList: {
-                name: 'GetMainList',
-                url: '/api/list/',
-                method: 'get'
-            }
-        },
-    }
-  });
-
-  // use
-  const api = apiMod.getInstance();
-  api.main.getList({ query: { sort: -1 } });
-  ```
-- `false` single namespace
-
-  ```js
-  const apiMod = new ApiModule({
-    module: false,
-    apiMetas: {
-        getList: {
-            name: 'GetMainList',
-            url: '/api/list/',
-            method: 'get'
-        }
-    }
-  });
-
-  // use
-  const api = apiMod.getInstance();
-  api.getList({ query: { sort: -1 } });
-  ```
+Whether enable modular namespaces. [Learn more](#define-request-interface).
 
   > Example in Vue.js:  
     You can create multiple instance, typically when `module` option set to `false`
@@ -336,162 +411,72 @@ Whether enable modular namespaces
   Vue.prototype.$backgroundApi = backgroundApis;
   ```
 
-# Methods
+---
+
+# API Reference
+## class `ApiModule`
 ## Static Method
-### `globalBefore(foreRequestHook: (apiMeta, data, next) => null)`
 
-- params:
-    - `apiMeta`: `apiMetas` option single meta info you passed in
-    - `data`: parameters passed in api method
-    - `next(error?)` call `next` function to go next step.If `error` passed in, the request would be rejected.
-  
-- description:
+### globalBefore
+Set the **fore-request middleware**, which is consistent with the definition of [#useBefore](#useBefore), but will be overridden by the instance method and will affect all the `ApiModule` instances
 
-  Register fore-request middle ware function. **Affect all instances**.
-  You can do every thing here, for example, validate data schema before every request.
+### globalAfter
+Set the **post-request middleware**, which is consistent with the definition of [#useAfter](#useAfter), but will be overridden by the instance method and will affect all the `ApiModule` instances
 
-  > The following code used a simple validate tool, [obeyman(Calvin/Obeyman)](https://github.com/CalvinVon/Obeyman), to validate data.
-
-    ```js
-    // e.g. import a simple data validator ()
-    import Obeyman from 'obeyman';
-    import ApiModule from "@calvin_von/axios-api-module";
-
-    // For all instances
-    ApiModule.globalBefore((apiMeta, data, next) => {
-        const { name, method, url /* , or other custom fields */, schema } = apiMeta;
-        
-        if (schema) {
-            Obeyman.validate(data, schema, (err, stack) => {
-                if (err) {
-                    console.warn(`Api [${name}] validate failed\n`, stack);
-                }
-            });
-        }
-
-        // `next` function must be called
-        next();
-    });
-
-
-    const backendApi = new ApiModule({ /*...*/ });
-    // Just for `backendApi`
-    backendApi.useBefore((apiMeta, data, next) => {
-        console.log(apiMeta)
-        console.log(data)
-        next();
-    });
-    ```
-
-### `globalPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`
-
-- params:
-    - `apiMeta`: `apiMetas` option single meta info you passed in.
-    - `resWrapper`: an object includes `response` and `data` fields.
-        - `response`: response data from server.
-        - `data`: origin data passed in.
-    - `next(res)` call `next` function to go next step. A `res` parameter should be passed in.
-  
-- description:
-
-  Register post-request middle ware function. **Affect all instances**.
-  > You can do something like a pre-process for data.
-
-    ```js
-    // user.api.js
-    export default {
-        list: {
-            name: 'user list',
-            method: 'get',
-            preProcessor(users) {
-                return users.map(user => {
-                    user.age++;
-                    return user;
-                });
-            }
-        }
-    }
-    ```
-
-    ```js
-    import ApiModule from "@calvin_von/axios-api-module";
-
-    ApiModule.globalPostRequestMiddleWare((apiMeta, { data, response }, next) => {
-        const { preProcessor } = apiMeta;
-        
-        if (preProcessor) {
-            next(preProcessor(response));
-        }
-        else {
-            next(response);
-        }
-    });
-    ```
-
-### `globalFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`
-  
-  > NOTE: If there's no fallback middleware registered, a **default error handler** will be replaced with.
-
-- params:
-    - `apiMeta`: `apiMetas` option single meta info you passed in
-    - `errorWrapper`
-        - `data`: origin data passed in.
-        - `error`: `Error` instance.
-    - `next(error)` call `next` function to go next step
-
-- description:
-
-    Register fallback middle ware function.Called when error occurred. **Affect all instances**
-
-    ```js
-    import ApiModule from "@calvin_von/axios-api-module";
-
-    // For all instances
-    ApiModule.globalFallbackMiddleWare((apiMeta, { error }, next) => {
-        // an error must be passed in, or request would be seen as successful
-        next(error);
-    });
-
-
-    const backendApi = new ApiModule({ /*...*/ });
-    // Just for `backendApi`
-    backendApi.registerFallbackMiddleWare((apiMeta, { data, error }, next) => {
-        console.log(apiMeta)
-        console.log(data)
-        console.log(error)
-        // pass in custom error
-        next(new Error('Anther error'));
-    });
-    ```
+### globalCatch
+Set the **request failed middleware**, which is consistent with the definition of [#useCatch](#useCatch), but will be overridden by the instance method and will affect all the `ApiModule` instances
 
 ## Instance Method
-### `useBefore(foreRequestHook: (apiMeta, data, next) => null)`
-- description: Same as static method.But **only affect single instance**.
+### #useBefore
+- parameters: `foreRequestHook: (context, next) => null)`. Learn more about the [Middleware Definition](#Middleware-Definition)
+- description:
 
-### `registerPostRequestMiddleWare(postRequestHook: (apiMeta, resWrapper, next) => null)`
-- description: Same as static method.But **only affect single instance**.
+    The passed **fore-request middleware** will be called before every request. The available and effective `context` methods are as follows:
+    - [context#setData](#setData)
+    - [context#setError](#setError)
+    - [context#setAxiosOptions](#setAxiosOptions)
 
-### `registerFallbackMiddleWare(fallbackHook: (apiMeta, errorWrapper, next) => null)`
-- description: Same as static method.But **only affect single instance**.
+    If the wrong parameters are set at this time, the real request will not be sent, and the request will directly enter the failure stage.
 
-### `getInstance()`
-- return: `TransformedApiMap | { [namespace: string]: TransformedApiMap, $module?: ApiModule };`
-- description: Get transformed api map object.
+### #useAfter
+- parameters: `postRequestHook: (context, next) => null)`. Learn more about the [Middleware Definition](#Middleware-Definition)
+- description:
+
+    The passed **post-request middleware** will be called after every request is successful. The available and effective `context` methods are as follows:
+    - [context#setResponse](#setData)
+    - [context#setError](#setError)
+
+    If error parameters are set at this time, even if the request is successful, the request will enter the request failure stage
+
+### #useCatch
+- parameters: `fallbackHook: (context, next) => null)`. Learn more about the [Middleware Definition](#Middleware-Definition)
+- description:
+
+    The passed **request failed middleware** will be called after each request fails (or is set incorrectly). The available and effective `context` methods are as follows:
+    - [context#setError](#setError)
+
+    If an error parameter is set at this time, the original error value will be overwritten
+
+### #getInstance
+- return: `TransformedRequestMapper | { [namespace: string]: TransformedRequestMapper, $module?: ApiModule };`
+- description: Get the mapped request collection object
   ```js
   const apiModule = new ApiModule({ /*...*/ });
-  const api = apiModule.getInstance();
+  const apiMapper = apiModule.getInstance();
 
-  // Send a request
-  api.xxx({ /* `query`, `body`, `params` data here */ }, { /* Axios Request Config */ });
+  apiMapper.xxx({ /* `query`, `body`, `params` data here */ }, { /* Axios Request Config */ });
   ```
 
-### `getAxios()`
+### #getAxios
 - return: `AxiosInstance`
-- description: Get axios instance.
+- description: Get the axios instance that after setted
   ```js
   const apiModule = new ApiModule({ /*...*/ });
   const axios = apiModule.getAxios();
+
+  axios.get('/other/path', { /* Axios Request Config */ });
   ```
+
 
 ### `generateCancellationSource()`
 - return: `CancelTokenSource`
@@ -537,6 +522,54 @@ Whether enable modular namespaces
     // requestA would be rejected by reason `Canceled by the user`
     // requestB ok!
   ```
+
+---
+## class `Context`
+
+### Read-only members
+### metadata
+The copy of the metadata set for the current request, that is, modifying the read-only value will not affect the original metadata
+
+### method
+Request method for the current request
+
+### baseURL
+The baseURL of the current request
+
+### url
+The full request url path of the current request, a combination of `baseURL` and parsed `metadata.url`
+
+### data
+Request parameters for the current request, [see details](#Send-Requests):
+- data.query?: object. `URLSearchParams` query parameter for object request
+- data.params?: object. The dynamic URL parameters for the object request. Supports `/:id` and `/{id}` definitions
+- data.body?: object. request body data
+- Add other user-custom fields, which can be accessed in middlewares
+
+### response
+Response data for the current request
+
+### responseError
+The current request's response error data, or manually set error data, the existence of this value **does not mean that the request must be failed**
+
+### axiosOptions
+The `axios` option parameter to be used in the current request will be obtained by combining the second `opt` parameter and `context#setAxiosOptions` passed in the request
+
+### instance method
+### setData
+Set the request parameters of the incoming request ([View Details](#Send-Requests)), which will overwrite the incoming data to achieve the purpose of overwriting the requested data
+
+### setResponse
+Set the requested response data, which will overwrite the original response to achieve the purpose of overwriting the successful data of the request
+
+### setError
+Set the request failure data, whether the request is successful or not, it will return failure
+
+### setAxiosOptions
+Set options for the `axios` request, but will be **merged** with the `axios` option passed in the request method, and **the priority is not higher than the parameters passed in the request method**
+
+---
+
 # CHANGELOG
 [CHANGELOG](./CHANGELOG.md)
 

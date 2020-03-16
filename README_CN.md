@@ -47,15 +47,15 @@
             - [#getAxios](#getAxios)
             - [#generateCancellationSource](#generateCancellationSource)
     - [类 `Context`](#类-`Context`)
-        - [只读成员](只读成员)
-            - [metadata](metadata)
-            - [method](method)
-            - [url](url)
-            - [parsedUrl](parsedUrl)
-            - [data](data)
-            - [response](response)
-            - [responseError](responseError)
-        - [实例方法](实例方法)
+        - [只读成员](#只读成员)
+            - [metadata](#metadata)
+            - [method](#method)
+            - [baseURL](#baseURL)
+            - [url](#url)
+            - [data](#data)
+            - [response](#response)
+            - [responseError](#responseError)
+        - [实例方法](#实例方法)
             - [setData](#setData)
             - [setResponse](#setResponse)
             - [setError](#setError)
@@ -242,6 +242,12 @@ axios.get(`/api/user/${this.uid}/info`, {
 });
 ```
 
+额外的，每一个转换过后的请求上带有一个 `context` 参数，方便在中间件外设置请求的各种参数
+```js
+const context = Request.context;
+context.setAxoisOptions({ ... });
+```
+
 ---
 
 ## 设置中间件
@@ -379,7 +385,7 @@ const apiMod = new ApiModule({
     baseConfig: { /*...*/ },            // Object, axios 请求的选项参数
     module: true,                       // Boolean, 是否启用模块化命名空间
     console: true,                      // Boolean, 是否启用请求失败日志
-    apiMetas: {
+    metadatas: {
         main: {                         // 命名空间
             getList: {
                 method: 'get',          // 请求方式 "get" | "post" | "patch" | "delete" | "put" | "head"
@@ -408,8 +414,9 @@ const apiMod = new ApiModule({
   Vue.prototype.$backgroundApi = backgroundApis;
   ```
 
-# API
-## 静态方法
+# API 手册
+## 类 `ApiModule`
+### 静态方法
 ### globalBefore
 设置请求前置中间件，和 [#useBefore](#useBefore) 定义一致，但会被实例方法覆盖，且会影响生成的全部 `ApiModule` 实例
 
@@ -514,6 +521,52 @@ const apiMod = new ApiModule({
     // requestA 将会是 rejected 状态，错误原因是 `用户主动取消`
     // requestB 正常发送!
   ```
+---
+
+## 类 `Context`
+
+### 只读成员
+### metadata
+当前请求设置的 metadata 元数据（的拷贝），即修改该只读值并不会影响该接口定义的元数据
+
+### method
+当前请求的请求方法
+
+### baseURL
+当前请求的 baseURL
+
+### url
+当前请求的完整请求 url，为 baseURL 和 解析过的 metadata.url 的组合
+
+### data
+当前请求的请求参数，类型[查看详情](#发送请求)：
+- data.query?: object 请求的 `URLSearchParams` 查询参数
+- data.params?: object 请求的动态 URL 参数。支持 `/:id` 和 `/{id}` 定义法
+- data.body?: object 请求的请求体数据
+- 添加其他用户自定义字段，可在中间件中访问到
+
+### response
+当前请求的响应数据
+
+### responseError
+当前请求的响应错误数据，或者是手动设置的错误数据，存在该值**不代表请求一定失败**
+
+### axiosOptions
+当前请求即将使用的 `axios` 选项参数，将会由请求传入的第二个 `opt` 参数和 `context#setAxiosOptions` 合并得到
+
+### 实例方法
+### setData
+设置请求传入的请求参数（[查看详情](#发送请求)），将覆盖传入数据以达到改写请求数据的目的
+
+### setResponse
+设置请求的响应数据，将覆盖原来的响应以达到改写请求成功数据的目的
+
+### setError
+设置请求失败数据，无论请求是否成功，均会返回失败
+
+### setAxiosOptions
+设置 `axios` 请求的选项，但会和请求方法中传入的 `axios` 选项**合并**，**且优先级没有请求方法中传入的参数高**
+
 ---
 
 # 版本变更记录

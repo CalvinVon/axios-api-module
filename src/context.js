@@ -83,22 +83,23 @@ export default class Context {
         return this._metadata.method;
     }
 
-    get url() {
-        return this._metadata.url;
+    get baseURL() {
+        return this.axiosOptions.baseURL || '';
     }
 
-    get parsedUrl() {
+    get url() {
+        const { url } = this._metadata;
         const { params } = this.data || {};
 
         if (isObject(params)) {
             // handle api like /a/:id/b/{param}
-            return this.url
+            return this.baseURL + url
                 .replace(/\B(?::(\w+)|{(\w+)})/g, (...args) => {
                     return params[args[1] || args[2]];
                 });
         }
         else {
-            return this.url;
+            return this.baseURL + url;
         }
     }
 

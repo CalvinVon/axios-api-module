@@ -29,6 +29,10 @@ describe('foreRequestMiddleware', () => {
                 test: {
                     url: '/',
                     method: 'post'
+                },
+                testParams: {
+                    url: '/user/:id/{time}',
+                    method: 'get'
                 }
             },
             module: false
@@ -171,6 +175,41 @@ describe('foreRequestMiddleware', () => {
             expect(res.config.headers['x-custom-header']).to.be.equal('I am custom header');
         } catch (error) {
             console.error(error);
+            throw 'It should not go here';
+        }
+    });
+
+    it('context.baseURL and context.url', async () => {
+        const baseURL = 'http://localhost:7788/api';
+        const id = 123;
+        const now = Date.now();
+
+        apiModule.useBefore((context, next) => {
+            expect(context.baseURL).to.be.equal(baseURL);
+            expect(context.url).to.be.equal(`${baseURL}/user/${id}/${now}`);
+            next();
+        });
+
+        const request = apiModule.getInstance().testParams;
+
+        try {
+            const res = await request(
+                {
+                    params: {
+                        id,
+                        time: now
+                    }
+                },
+                {
+                    baseURL
+                }
+            );
+
+            expect(res).to.be.ok;
+            expect(res.config.url).to.be.equal(request.context.url);
+            expect(res.config.baseURL).to.be.equal(request.context.baseURL);
+        } catch (error) {
+            console.log(error);
             throw 'It should not go here';
         }
     });
