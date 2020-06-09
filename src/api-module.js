@@ -56,7 +56,7 @@ export default class ApiModule {
         if (modularNsp) {
             // moduled namespace
             Object.keys(metadatas).forEach(apiName => {
-                this.apiMapper[apiName] = this._proxyable(metadatas[apiName]);
+                this.apiMapper[apiName] = this._proxyable(metadatas[apiName], apiName);
             });
         }
         else {
@@ -74,15 +74,15 @@ export default class ApiModule {
 
 
     /**
-     * Register Globally Fore-Request MiddleWare Globally (For All Instance)
-     * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
+     * Register fore-request middleWare globally (for all instances)
+     * @param {Function} foreRequestHook(context, next) 
      */
     static globalBefore(foreRequestHook = defaultMiddleware) {
         ApiModule.foreRequestHook = foreRequestHook;
     }
 
     /**
-     * Register Globally Post-Request MiddleWare Globally (For All Instance)
+     * Register post-request middleware globally (for all instances)
      * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
      */
     static globalAfter(postRequestHook = defaultMiddleware) {
@@ -90,7 +90,7 @@ export default class ApiModule {
     }
 
     /**
-     * Register Globally ForeRequest MiddleWare Globally (For All Instance)
+     * Register fallback MiddleWare Globally (For All Instance)
      * @param {Function} fallbackHook(apiMeta, data = {}, next) 
      */
     static globalCatch(fallbackHook = defaultMiddleware) {
@@ -208,24 +208,25 @@ export default class ApiModule {
     }
 
     // tranfer single module api meta info to request
-    _proxyable(target) {
+    _proxyable(target, apiName) {
         const _target = {};
         for (const key in target) {
             if (target.hasOwnProperty(key)) {
-                _target[key] = this._proxyApiMetadata(target, key);
+                _target[key] = this._proxyApiMetadata(target, key, apiName);
             }
         }
         return _target;
     }
 
     // map api meta to to request
-    _proxyApiMetadata(target, key) {
+    _proxyApiMetadata(target, key, parentKey) {
         const metadata = target[key];
         if (Object.prototype.toString.call(metadata) !== '[object Object]') {
             throw new TypeError(`[ApiModule] api metadata [${key}] is not an object`);
         }
 
         const context = new Context(metadata, this.options);
+        context._metadataKeys = [parentKey, key].join('.');
 
         if (!context.url || !context.method) {
             console.warn(`[ApiModule] check your api metadata for [${key}]: `, metadata);

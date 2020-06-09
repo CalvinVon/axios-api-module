@@ -7,16 +7,25 @@ export interface ApiModuleConfig {
     baseConfig?: AxiosRequestConfig;
 }
 
+/**
+ * Fore-request middleware
+ */
 export type ForeRequestHook = (
     context: Context,
     next: (error?: any) => null
 ) => void;
 
+/**
+ * Post-request middleware
+ */
 export type PostRequestHook = (
     context: Context,
     next: (error?: any) => null
 ) => void;
 
+/**
+ * fallback middleware
+ */
 export type FallbackHook = (
     context: Context,
     next: (error?: any) => null
@@ -32,7 +41,7 @@ export interface ApiMetadata {
     [field: string]: any
 }
 
-interface TransformedRequestData {
+export interface TransformedRequestData {
     query?: Object;
     params?: Object;
     body?: Object;
@@ -55,20 +64,44 @@ export interface ApiModuleOptions {
     baseConfig: AxiosRequestConfig;
 }
 
-declare class ApiModule {
+export declare class ApiModule {
     constructor(config: ApiModuleConfig);
 
     options: ApiModuleOptions;
+
+    /**
+     * Register fore-request middleWare globally (for all instances)
+     */
     static globalBefore(foreRequestHook: ForeRequestHook): void;
+
+    /**
+     * Register post-request middleware globally (for all instances)
+     */
     static globalAfter(postRequestHook: PostRequestHook): void;
+
+    /**
+     * Register fallback middleware globally (for all instances)
+     */
     static globalCatch(fallbackHook: FallbackHook): void;
 
+
+    /**
+     * Registe fore-request middleware
+     */
     useBefore(foreRequestHook: ForeRequestHook): void;
+
+    /**
+     * Registe post-request middleware
+     */
     useAfter(postRequestHook: PostRequestHook): void;
+
+    /**
+     * Registe fallback-request middleware
+     */
     useCatch(fallbackHook: FallbackHook): void;
 
     /**
-     * Get moduled/single module namespace api map
+     * Get the instance of api metadatas mapper
      */
     getInstance():
         {
@@ -80,25 +113,61 @@ declare class ApiModule {
             $module: ApiModule;
             [namespace: string]: TransformedRequestMapper
         };
+
+    /**
+     * Get the instance of Axios
+     */
     getAxios(): AxiosInstance;
+
+    /**
+     * Get axios cancellation source
+     */
     generateCancellationSource(): CancelTokenSource;
 }
 
-declare class Context {
-    setData(data: any): Context;
+export declare class Context {
+    /**
+     * Set request data
+     */
+    setData(data: TransformedRequestData): Context;
+
+    /**
+     * Set response data
+     */
     setResponse(response: any): Context;
-    setError(error: any): Context;
+
+    /**
+     * Set request error or response error data
+     */
+    setError(error: string | Error): Context;
+
+    /**
+     * Set axios request config
+     */
     setAxiosOptions(options: AxiosRequestConfig): Context;
 
     readonly metadata: ApiMetadata;
     readonly method: string;
     readonly baseURL: string;
+    /**
+     * Parsed url
+     */
     readonly url: string;
 
-    readonly data: any;
-    readonly response: any;
-    readonly responseError: any;
+    /**
+     * Request data
+     */
+    readonly data: TransformedRequestData;
 
+    /**
+     * Response data
+     */
+    readonly response: any;
+
+    /**
+     * Response error
+     */
+    readonly responseError: any;
     readonly axiosOptions: AxiosRequestConfig | object;
 }
 

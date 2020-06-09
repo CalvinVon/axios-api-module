@@ -1,6 +1,6 @@
 {
     "name": "@calvin_von/axios-api-module",
-    "version": "3.0.0-beta",
+    "version": "3.1.0",
     "description": "Encapsulated api module based on axios",
     "main": "lib/index.js",
     "module": "es/index.js",

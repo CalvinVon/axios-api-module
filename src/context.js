@@ -3,6 +3,7 @@ export default class Context {
     // Private members
     _options;
     _metadata;
+    _metadataKeys;
     _data = null;
     _response = null;
     _responseError = null;
@@ -77,6 +78,10 @@ export default class Context {
 
     get metadata() {
         return { ...this._metadata };
+    }
+
+    get metadataKeys() {
+        return this._metadataKeys;
     }
 
     get method() {
