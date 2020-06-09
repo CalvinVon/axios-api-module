@@ -528,7 +528,12 @@ Set the **request failed middleware**, which is consistent with the definition o
 
 ### Read-only members
 ### metadata
-The copy of the metadata set for the current request, that is, modifying the read-only value will not affect the original metadata
+The copy of the metadata for the current request, that is, modifying the read-only value will not affect the original metadata
+
+### metadataKeys
+The object keys path array of metadata corresponding to the current request, for example, the request `apiMapper.moduleA.interfaceB` method corresponds to `['moduleA','interfaceB']`.
+
+Would be useful in the development environment.
 
 ### method
 Request method for the current request

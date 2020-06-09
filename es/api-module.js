@@ -65,7 +65,7 @@ var ApiModule = /*#__PURE__*/function () {
     if (modularNsp) {
       // moduled namespace
       Object.keys(metadatas).forEach(function (apiName) {
-        _this.apiMapper[apiName] = _this._proxyable(metadatas[apiName]);
+        _this.apiMapper[apiName] = _this._proxyable(metadatas[apiName], apiName);
       });
     } else {
       // single module
@@ -80,8 +80,8 @@ var ApiModule = /*#__PURE__*/function () {
     });
   }
   /**
-   * Register Globally Fore-Request MiddleWare Globally (For All Instance)
-   * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
+   * Register fore-request middleWare globally (for all instances)
+   * @param {Function} foreRequestHook(context, next) 
    */
 
 
@@ -218,12 +218,12 @@ var ApiModule = /*#__PURE__*/function () {
 
   }, {
     key: "_proxyable",
-    value: function _proxyable(target) {
+    value: function _proxyable(target, apiName) {
       var _target = {};
 
       for (var key in target) {
         if (target.hasOwnProperty(key)) {
-          _target[key] = this._proxyApiMetadata(target, key);
+          _target[key] = this._proxyApiMetadata(target, key, apiName);
         }
       }
 
@@ -232,7 +232,7 @@ var ApiModule = /*#__PURE__*/function () {
 
   }, {
     key: "_proxyApiMetadata",
-    value: function _proxyApiMetadata(target, key) {
+    value: function _proxyApiMetadata(target, key, parentKey) {
       var _this3 = this;
 
       var metadata = target[key];
@@ -242,6 +242,7 @@ var ApiModule = /*#__PURE__*/function () {
       }
 
       var context = new Context(metadata, this.options);
+      context._metadataKeys = [parentKey, key].filter(Boolean);
 
       if (!context.url || !context.method) {
         console.warn("[ApiModule] check your api metadata for [".concat(key, "]: "), metadata);
@@ -327,7 +328,7 @@ var ApiModule = /*#__PURE__*/function () {
       ApiModule.foreRequestHook = foreRequestHook;
     }
     /**
-     * Register Globally Post-Request MiddleWare Globally (For All Instance)
+     * Register post-request middleware globally (for all instances)
      * @param {Function} foreRequestHook(apiMeta, data = {}, next) 
      */
 
@@ -338,7 +339,7 @@ var ApiModule = /*#__PURE__*/function () {
       ApiModule.postRequestHook = postRequestHook;
     }
     /**
-     * Register Globally ForeRequest MiddleWare Globally (For All Instance)
+     * Register fallback MiddleWare Globally (For All Instance)
      * @param {Function} fallbackHook(apiMeta, data = {}, next) 
      */
 

@@ -15,6 +15,8 @@ var Context = /*#__PURE__*/function () {
 
     _defineProperty(this, "_metadata", void 0);
 
+    _defineProperty(this, "_metadataKeys", '');
+
     _defineProperty(this, "_data", null);
 
     _defineProperty(this, "_response", null);
@@ -101,6 +103,11 @@ var Context = /*#__PURE__*/function () {
     key: "metadata",
     get: function get() {
       return _objectSpread({}, this._metadata);
+    }
+  }, {
+    key: "metadataKeys",
+    get: function get() {
+      return this._metadataKeys;
     }
   }, {
     key: "method",

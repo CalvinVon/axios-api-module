@@ -49,6 +49,7 @@
     - [类 `Context`](#类-`Context`)
         - [只读成员](#只读成员)
             - [metadata](#metadata)
+            - [metadataKeys](#metadataKeys)
             - [method](#method)
             - [baseURL](#baseURL)
             - [url](#url)
@@ -528,6 +529,11 @@ const apiMod = new ApiModule({
 ### 只读成员
 ### metadata
 当前请求设置的 metadata 元数据（的拷贝），即修改该只读值并不会影响该接口定义的元数据
+
+### metadataKeys
+当前请求对应的 metadata 元数据的对象路径数组，例如请求 `apiMapper.moduleA.interfaceB` 方法对应的是 `['moduleA', 'interfaceB']`。
+
+在开发环境中实用。
 
 ### method
 当前请求的请求方法

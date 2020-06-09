@@ -226,7 +226,7 @@ export default class ApiModule {
         }
 
         const context = new Context(metadata, this.options);
-        context._metadataKeys = [parentKey, key].join('.');
+        context._metadataKeys = [parentKey, key].filter(Boolean);
 
         if (!context.url || !context.method) {
             console.warn(`[ApiModule] check your api metadata for [${key}]: `, metadata);
