@@ -98,6 +98,8 @@ var Context = /*#__PURE__*/function () {
       } else {
         console.error("[ApiModule] configure axios options error, the parameter `".concat(axiosOptions, "` is not an object"));
       }
+
+      return this;
     }
   }, {
     key: "metadata",

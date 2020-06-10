@@ -166,41 +166,6 @@ describe('api metadata mapper', () => {
     });
 });
 
-
-describe('request.context.metadataKeys', () => {
-    it ('single module', () => {
-        const request = new ApiModule({
-            metadatas: {
-                interfaceA: {
-                    name: 'interfaceA',
-                    method: 'GET',
-                    url: '/test'
-                }
-            },
-            module: false
-        }).getInstance().interfaceA;
-
-        expect(request.context.metadataKeys).to.be.deep.equal(['interfaceA']);
-    });
-
-    it ('multiple module', () => {
-        const request = new ApiModule({
-            metadatas: {
-                modA: {
-                    interface: {
-                        name: 'modA',
-                        method: 'GET',
-                        url: '/test'
-                    }
-                }
-            },
-            module: true
-        }).getInstance().modA.interface;
-
-        expect(request.context.metadataKeys).to.be.deep.equal(['modA', 'interface']);
-    });
-})
-
 describe('cancellation', () => {
     let server;
     before('Setup server', done => {

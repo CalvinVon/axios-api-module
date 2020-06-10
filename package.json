@@ -1,6 +1,6 @@
 {
     "name": "@calvin_von/axios-api-module",
-    "version": "3.1.0",
+    "version": "3.1.1",
     "description": "Encapsulated api module based on axios",
     "main": "lib/index.js",
     "module": "es/index.js",
@@ -10,7 +10,8 @@
         "build:lib": "cross-env BABEL_ENV=umd babel src --out-dir lib",
         "build:dist": "cross-env BABEL_ENV=umd webpack --config webpack.config.js",
         "test:unit": "cross-env BABEL_ENV=test mocha --require @babel/register",
-        "coverage:unit": "cross-env BABEL_ENV=test nyc mocha --require @babel/register"
+        "coverage:unit": "cross-env BABEL_ENV=test nyc mocha --require @babel/register",
+        "prepublish": "npm run build:es && npm run build:lib && npm run build:dist && npm run coverage:unit"
     },
     "repository": {
         "type": "git",
@@ -28,24 +29,24 @@
     },
     "homepage": "https://github.com/CalvinVon/axios-api-module#readme",
     "devDependencies": {
-        "@babel/cli": "^7.8.4",
-        "@babel/core": "^7.8.7",
-        "@babel/plugin-proposal-class-properties": "^7.3.3",
-        "@babel/plugin-transform-runtime": "^7.8.3",
-        "@babel/preset-env": "^7.8.7",
-        "@babel/register": "^7.4.4",
-        "@babel/runtime": "^7.8.7",
-        "axios": "^0.19.0",
-        "babel-loader": "^8.0.5",
-        "babel-plugin-add-module-exports": "^1.0.0",
+        "@babel/cli": "^7.10.1",
+        "@babel/core": "^7.10.2",
+        "@babel/plugin-proposal-class-properties": "^7.10.1",
+        "@babel/plugin-transform-runtime": "^7.10.1",
+        "@babel/preset-env": "^7.10.2",
+        "@babel/register": "^7.10.1",
+        "@babel/runtime": "^7.10.2",
+        "axios": "^0.19.2",
+        "babel-loader": "^8.1.0",
+        "babel-plugin-add-module-exports": "^1.0.2",
         "chai": "^4.2.0",
-        "cross-env": "^5.2.0",
+        "cross-env": "^7.0.2",
         "istanbul": "^0.4.5",
-        "mocha": "^6.1.4",
-        "nyc": "^14.1.1",
+        "mocha": "^7.2.0",
+        "nyc": "^15.1.0",
         "uglifyjs-webpack-plugin": "^2.2.0",
-        "webpack": "^4.29.5",
-        "webpack-cli": "^3.2.3"
+        "webpack": "^4.43.0",
+        "webpack-cli": "^3.3.11"
     },
     "nyc": {
         "check-coverage": true,

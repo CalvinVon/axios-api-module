@@ -74,6 +74,7 @@ export default class Context {
         else {
             console.error(`[ApiModule] configure axios options error, the parameter \`${axiosOptions}\` is not an object`);
         }
+        return this;
     }
 
     get metadata() {

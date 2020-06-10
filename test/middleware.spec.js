@@ -235,6 +235,37 @@ describe('foreRequestMiddleware', () => {
 
         utils.recoverConsole();
     });
+
+    it('error occurred in fore-request middleware', async () => {
+        utils.overrideConsole();
+
+        apiModule.useBefore((context, next) => {
+            throw 'I am an Error';
+            next();
+        });
+
+        try {
+            await apiModule.getInstance().test();
+        } catch (error) {
+            expect(error).to.be.match(/An error occurred in foreRequestMiddleWare/);
+        }
+
+        utils.recoverConsole();
+    });
+
+    it('error occurred in fore-request middleware, but request would send normally', async () => {
+        apiModule.useBefore((context, next) => {
+            throw 'I am an Error';
+            next();
+        });
+
+        try {
+            const res = await apiModule.getInstance().test();
+            expect(res).to.be.ok;
+        } catch (error) {
+            throw 'It should not go here';
+        }
+    });
 });
 
 describe('postRequestMiddleware', () => {
@@ -315,6 +346,32 @@ describe('postRequestMiddleware', () => {
             expect(err).to.be.equal(error);
         }
     });
+
+    it('error occurred in post-request middleware', async () => {
+        try {
+            apiModule.useAfter((context, next) => {
+                throw 'I am an Error';
+                next();
+            });
+            await apiModule.getInstance().test();
+        } catch (error) {
+            expect(error).to.be.match(/An error occurred in postRequestMiddleWare/);
+        }
+    });
+
+    it('error occurred in post-request middleware, but request would send normally', async () => {
+        apiModule.useAfter((context, next) => {
+            throw 'I am an Error';
+            next();
+        });
+
+        try {
+            const res = await apiModule.getInstance().test();
+            expect(res).to.be.ok;
+        } catch (error) {
+            throw 'It should not go here';
+        }
+    });
 });
 
 
@@ -339,7 +396,8 @@ describe('fallbackMiddleware', () => {
     beforeEach(() => {
         apiModule = new ApiModule({
             baseConfig: {
-                baseURL: 'http://localhost:7788'
+                baseURL: 'http://localhost:7788',
+                timeout: 500
             },
             metadatas: {
                 test: {
@@ -347,7 +405,8 @@ describe('fallbackMiddleware', () => {
                     method: 'post'
                 }
             },
-            module: false
+            module: false,
+            console: true
         });
     });
 
@@ -430,5 +489,57 @@ describe('fallbackMiddleware', () => {
         } catch (err) {
             throw 'It should not go here';
         }
+    });
+
+    it('error occurred in fallback middleware', async () => {
+        try {
+            apiModule.useBefore((context, next) => {
+                context.setError('I am an error');
+                next();
+            });
+            apiModule.useCatch((context, next) => {
+                throw 'I am an Error';
+                next();
+            });
+            await apiModule.getInstance().test();
+            throw 'It should not go here';
+        } catch (error) {
+            console.log(error);
+            expect(error).to.be.match(/I am an error/);
+        }
+    });
+
+    it('error occurred in fallback middleware, but request would send normally', async () => {
+
+        try {
+            apiModule.useCatch((context, next) => {
+                throw 'I am an Error';
+                next();
+            });
+            const res = await apiModule.getInstance().test();
+            expect(res).to.be.ok;
+        } catch (error) {
+            throw 'It should not go here';
+        }
+    });
+
+
+    it('default error handler', async () => {
+        utils.overrideConsole();
+        apiModule.useCatch(null);
+
+        try {
+            const request = apiModule.getInstance().test;
+            request.context.setAxiosOptions({
+                // typo on purpose
+                baseURL: 'http://localhost:8877'
+            });
+            request();
+        } catch (error) {
+            console.log('error: ', error);
+            expect(error).to.be.match(/\[ApiModule\] \[post \/\] failed with /);
+        }
+
+        utils.recoverConsole();
     });
 });

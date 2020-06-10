@@ -158,7 +158,12 @@ var ApiModule = /*#__PURE__*/function () {
       var hookFunction = this.foreRequestHook || ApiModule.foreRequestHook || defaultMiddleware;
 
       if (typeof hookFunction === 'function') {
-        hookFunction.call(this, context, next);
+        try {
+          hookFunction.call(this, context, next);
+        } catch (error) {
+          console.error('[ApiModule] An error occurred in foreRequestMiddleWare: ', error);
+          next();
+        }
       } else {
         console.warn("[ApiModule] foreRequestMiddleWare: ".concat(hookFunction, " is not a valid foreRequestHook function"));
         next();
@@ -176,7 +181,12 @@ var ApiModule = /*#__PURE__*/function () {
       var hookFunction = this.postRequestHook || ApiModule.postRequestHook || defaultMiddleware;
 
       if (typeof hookFunction === 'function') {
-        hookFunction.call(this, context, next);
+        try {
+          hookFunction.call(this, context, next);
+        } catch (error) {
+          console.error('[ApiModule] An error occurred in postRequestMiddleWare: ', error);
+          next();
+        }
       } else {
         console.warn("[ApiModule] postRequestMiddleWare: ".concat(hookFunction, " is not a valid foreRequestHook function"));
         next();
@@ -193,9 +203,6 @@ var ApiModule = /*#__PURE__*/function () {
     value: function fallbackMiddleWare(context, next) {
       var _this2 = this;
 
-      var error = context.responseError;
-      var hookFunction = this.fallbackHook || ApiModule.fallbackHook || defaultMiddleware;
-
       var defaultErrorHandler = function defaultErrorHandler() {
         if (_this2.options.console) {
           var _context$metadata = context.metadata,
@@ -208,8 +215,16 @@ var ApiModule = /*#__PURE__*/function () {
         next();
       };
 
+      var error = context.responseError;
+      var hookFunction = this.fallbackHook || ApiModule.fallbackHook || defaultErrorHandler;
+
       if (typeof hookFunction === 'function') {
-        hookFunction.call(this, context, next);
+        try {
+          hookFunction.call(this, context, next);
+        } catch (error) {
+          console.error('[ApiModule] An error occurred in fallbackMiddleWare: ', error);
+          next();
+        }
       } else {
         console.warn("[ApiModule] fallbackMiddleWare: ".concat(hookFunction, " is not a valid fallbackHook function"));
         defaultErrorHandler();
@@ -273,7 +288,7 @@ var ApiModule = /*#__PURE__*/function () {
       var request = function request(data) {
         var opt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-        context.setData(data)._setRequestOptions(opt);
+        context.setError(null).setResponse(null).setAxiosOptions({}).setData(data)._setRequestOptions(opt);
 
         return new Promise(function (resolve, reject) {
           _this3.foreRequestMiddleWare(context, function (err) {
