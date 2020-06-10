@@ -147,6 +147,7 @@ export declare class Context {
     setAxiosOptions(options: AxiosRequestConfig): Context;
 
     readonly metadata: ApiMetadata;
+    readonly metadataKeys: string[];
     readonly method: string;
     readonly baseURL: string;
     /**
