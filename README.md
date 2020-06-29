@@ -243,12 +243,6 @@ axios.get(`/api/user/${this.uid}/info`, {
 });
 ```
 
-额外的，每一个转换过后的请求上带有一个 `context` 参数，方便在中间件外设置请求的各种参数
-```js
-const context = Request.context;
-context.setAxoisOptions({ ... });
-```
-
 ---
 
 ## 设置中间件
