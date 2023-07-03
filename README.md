@@ -1,3 +1,7 @@
+# API 设计已经过时，本模块不再维护！
+
+# The API design is outdated, this module is no longer maintained!
+
 # axios-api-module
 一个专注于业务并基于 [axios](https://github.com/axios/axios) 的模块化封装模块。
 
